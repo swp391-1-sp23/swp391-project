@@ -29,23 +29,26 @@ namespace SWP391.Project.Repositories
 
         public async Task<bool> AddAccount(AccountEntity account)
         {
-            _ = await _dbContext.Accounts.AddAsync(account);
-            _ = await _dbContext.SaveChangesAsync();
+            try
+            {
+                _ = await _dbContext.Accounts.AddAsync(account);
+                _ = await _dbContext.SaveChangesAsync();
+            }
+            catch
+            {
+                return false;
+            }
             return true;
         }
 
         public async Task<AccountEntity?> GetAccountById(Guid accountId)
         {
-            AccountEntity? account = await _dbContext.Accounts.FirstOrDefaultAsync(item => item.Id == accountId);
-
-            return account;
+            return await _dbContext.Accounts.FirstOrDefaultAsync(item => item.Id == accountId);
         }
 
         public async Task<AccountEntity?> GetAccountByEmail(string accountEmail)
         {
-            AccountEntity? account = await _dbContext.Accounts.FirstOrDefaultAsync(item => item.Email == accountEmail);
-
-            return account;
+            return await _dbContext.Accounts.FirstOrDefaultAsync(item => item.Email == accountEmail);
         }
     }
 }

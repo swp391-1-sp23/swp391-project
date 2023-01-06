@@ -6,7 +6,7 @@ namespace SWP391.Project.DbContexts
 {
     public class ProjectDbContext : DbContext
     {
-        public ProjectDbContext(DbContextOptions<ProjectDbContext> opts, IConfiguration configuration) : base(options: opts)
+        public ProjectDbContext(DbContextOptions<ProjectDbContext> opts) : base(options: opts)
         {
         }
 

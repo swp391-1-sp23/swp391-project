@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using SWP391.Project.DbContexts;
 using SWP391.Project.Models;
 using SWP391.Project.Repositories;
+using SWP391.Project.Services;
 
 namespace SWP391.Project.Extensions
 {
@@ -62,6 +63,7 @@ namespace SWP391.Project.Extensions
             _ = services.AddScoped<IAccountRepository, AccountRepository>();
 
             // services
+            _ = services.AddScoped<IAuthService, AuthService>();
 
             return services;
         }
