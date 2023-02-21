@@ -1,0 +1,45 @@
+@startuml 20 - Customer - Update profile
+
+autonumber
+autoactivate on
+
+actor Customer as Actor
+boundary Form
+control AccountController as Controller
+participant AccountService as Service
+participant AccountRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: New profile
+
+Form -> Form: Validate input pattern
+
+Form --> Form: Input pattern status
+
+opt Input pattern matched
+  Form -> Controller: HttpRequest
+  Controller -> Service: UpdateProfileAsync
+  Service -> Repo: GetByIdAsync
+  Repo -> Context: FindAsync
+  Context -> Database: Query
+  Database --> Context: account
+  Context --> Repo: account
+  Repo --> Service: account
+
+  opt account != null
+    Service -> Repo: UpdateAsync
+    Repo -> Context: UpdateAsync
+    Context -> Database: Update
+    Database --> Context: status
+    Context --> Repo: status
+    Repo --> Service: status
+  end
+
+  Service --> Controller: status
+  Controller --> Form: Response
+end
+
+Form --> Actor: status
+
+@enduml

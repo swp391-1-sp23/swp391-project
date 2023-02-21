@@ -1,0 +1,27 @@
+@startuml 03 - Shop - Remove customer account
+
+autonumber
+autoactivate on
+
+actor Shop as Actor
+boundary Form
+control AccountController as Controller
+participant AccountService as Service
+participant AccountRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form:
+Form -> Controller: HttpRequest
+Controller -> Service: RemoveAccountAsync
+Service -> Repo: RemoveAsync
+Repo -> Context: RemoveAsync
+Context -> Database: Delete
+Database --> Context: status
+Context --> Repo: status
+Repo --> Service: status
+Service --> Controller: status
+Controller --> Form: Response
+Form --> Actor: status
+
+@enduml

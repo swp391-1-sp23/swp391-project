@@ -1,0 +1,35 @@
+@startuml 07 - Shop - Update product
+
+autonumber
+autoactivate on
+
+actor Shop as Actor
+boundary Form
+control ProductController as Controller
+participant ProductService as Service
+participant ProductRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: Product information
+
+Form -> Form: Validate input pattern
+
+Form --> Form: Input pattern status
+
+opt Input pattern matched
+  Form -> Controller: HttpRequest
+  Controller -> Service: UpdateProductAsync
+  Service -> Repo: UpdateAsync
+  Repo -> Context: UpdateAsync
+  Context -> Database: Update
+  Database --> Context: status
+  Context --> Repo: status
+  Repo --> Service: status
+  Service --> Controller: status
+  Controller --> Form: Response
+end
+
+Form --> Actor: status
+
+@enduml

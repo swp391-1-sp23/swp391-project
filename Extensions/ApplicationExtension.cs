@@ -6,20 +6,20 @@ namespace SWP391.Project.Extensions
         {
             IWebHostEnvironment environment = application.Environment;
 
-            if (environment.IsDevelopment())
+            // if (environment.IsDevelopment())
+            // {
+            application.UseSwagger();
+            application.UseSwaggerUI(setupAction: options =>
             {
-                _ = application.UseSwagger();
-                _ = application.UseSwaggerUI(setupAction: setupAction =>
-                {
-                    setupAction.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP391 API");
-                    setupAction.RoutePrefix = string.Empty;
-                });
-            }
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+                options.RoutePrefix = string.Empty;
+            });
+            // }
 
-            _ = application.UseCors("CorsPolicy");
-            _ = application.UseAuthentication();
-            _ = application.UseAuthorization();
-            _ = application.MapControllers();
+            application.UseCors("CorsPolicy");
+            application.UseAuthentication();
+            application.UseAuthorization();
+            application.MapControllers();
 
             return application;
         }

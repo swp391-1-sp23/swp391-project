@@ -1,0 +1,27 @@
+@startuml 24 - Customer - List cart products
+
+autonumber
+autoactivate on
+
+actor Customer as Actor
+boundary Form
+control CartController as Controller
+participant CartService as Service
+participant CartRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form:
+Form -> Controller: HttpRequest
+Controller -> Service: GetCollectionByAccountIdAsync
+Service -> Repo: GetCollectionAsync
+Repo -> Context: Where
+Context -> Database: Query
+Database --> Context: products
+Context --> Repo: products
+Repo --> Service: products
+Service --> Controller: products
+Controller --> Form: Response
+Form --> Actor: products
+
+@enduml

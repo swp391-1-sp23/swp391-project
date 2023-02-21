@@ -1,0 +1,27 @@
+@startuml 01 - Shop - Filter accounts
+
+autonumber
+autoactivate on
+
+actor Shop as Actor
+boundary Form
+control AccountController as Controller
+participant AccountService as Service
+participant AccountRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: Query parameters
+Form -> Controller: HttpRequest
+Controller -> Service: GetAccountCollectionAsync
+Service -> Repo: GetCollectionAsync
+Repo -> Context: Where
+Context -> Database: Query
+Database --> Context: accounts
+Context --> Repo: accounts
+Repo --> Service: accounts
+Service --> Controller: accounts
+Controller --> Form: Response
+Form --> Actor: accounts
+
+@enduml

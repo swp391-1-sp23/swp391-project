@@ -1,0 +1,35 @@
+@startuml 12 - Shop - Add images to products
+
+autonumber
+autoactivate on
+
+actor Shop as Actor
+boundary Form
+control ProductController as Controller
+participant ProductService as Service
+participant ImageRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: New images
+
+Form -> Form: Validate input pattern
+
+Form --> Form: Input pattern status
+
+opt Input pattern matched
+  Form -> Controller: HttpRequest
+  Controller -> Service: AddProductImageAsync
+  Service -> Repo: AddAsync
+  Repo -> Context: AddAsync
+  Context -> Database: Insert
+  Database --> Context: status
+  Context --> Repo: status
+  Repo --> Service: status
+  Service --> Controller: status
+  Controller --> Form: Response
+end
+
+Form --> Actor: status
+
+@enduml

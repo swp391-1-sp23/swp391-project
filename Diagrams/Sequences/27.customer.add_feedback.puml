@@ -1,0 +1,28 @@
+@startuml 27 - Customer - Add feedback
+
+autonumber
+autoactivate on
+
+actor Customer as Actor
+boundary Form
+control FeedbackController as Controller
+participant FeedbackService as Service
+participant FeedbackRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: Order\nProduct\nFeedback\nRating
+Form -> Controller: HttpRequest
+Controller -> Service: AddFeedbackAsync
+Service -> Repo: AddAsync
+Repo -> Context: AddAsync
+Context -> Database: Insert
+
+Database --> Context: status
+Context --> Repo: status
+Repo --> Service: status
+Service --> Controller: status
+Controller --> Form: Response
+Form --> Actor: status
+
+@enduml

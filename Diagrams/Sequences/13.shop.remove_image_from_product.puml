@@ -1,0 +1,28 @@
+@startuml 13 - Shop - Remove image from product
+
+autonumber
+autoactivate on
+
+actor Shop as Actor
+boundary Form
+control ProductController as Controller
+participant ProductService as Service
+participant ImageRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: ImageId
+Form -> Controller: HttpRequest
+Controller -> Service: RemoveProductImageAsync
+Service -> Repo: RemoveAsync
+Repo -> Context: RemoveAsync
+Context -> Database: Delete
+Database --> Context: status
+Context --> Repo: status
+Repo --> Service: status
+Service --> Controller: status
+Controller --> Form: Response
+
+Form --> Actor: status
+
+@enduml
