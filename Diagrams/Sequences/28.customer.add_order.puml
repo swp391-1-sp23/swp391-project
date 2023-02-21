@@ -1,0 +1,28 @@
+@startuml 28 - Customer - Add order
+
+autonumber
+autoactivate on
+
+actor Customer as Actor
+boundary Form
+control OrderController as Controller
+participant OrderService as Service
+participant OrderRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: Product\nQuantity\nAddress
+Form -> Controller: HttpRequest
+Controller -> Service: AddOrderAsync
+Service -> Repo: AddAsync
+Repo -> Context: AddAsync
+Context -> Database: Insert
+
+Database --> Context: status
+Context --> Repo: status
+Repo --> Service: status
+Service --> Controller: status
+Controller --> Form: Response
+Form --> Actor: status
+
+@enduml

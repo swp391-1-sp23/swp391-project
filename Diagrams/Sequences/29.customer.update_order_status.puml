@@ -1,0 +1,28 @@
+@startuml 29 - Customer - Update order status
+
+autonumber
+autoactivate on
+
+actor Customer as Actor
+boundary Form
+control OrderController as Controller
+participant OrderService as Service
+participant OrderRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: Order\nStatus
+Form -> Controller: HttpRequest
+Controller -> Service: UpdateOrderStatusAsync
+Service -> Repo: UpdateAsync
+Repo -> Context: UpdateAsync
+Context -> Database: Update
+
+Database --> Context: status
+Context --> Repo: status
+Repo --> Service: status
+Service --> Controller: status
+Controller --> Form: Response
+Form --> Actor: status
+
+@enduml

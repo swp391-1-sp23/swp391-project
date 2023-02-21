@@ -1,0 +1,45 @@
+@startuml 32 - Guest - Register Customer
+
+autonumber
+autoactivate on
+
+actor Guest as Actor
+boundary Form
+control AuthController as Controller
+participant AuthService as Service
+participant AccountRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: Credential
+
+Form -> Form: Validate input pattern
+
+Form --> Form: Input pattern status
+
+opt Input pattern matched
+  Form -> Controller: HttpRequest
+  Controller -> Service: RegisterAsync
+  Service -> Repo: GetByEmailAsync
+  Repo -> Context: SingleAsync
+  Context -> Database: Query
+  Database --> Context: account
+  Context --> Repo: account
+  Repo --> Service: account
+
+  opt account == null
+    Service -> Repo: AddAsync
+    Repo -> Context: AddAsync
+    Context -> Database: Insert
+    Database --> Context: status
+    Context --> Repo: status
+    Repo --> Service: status
+  end
+
+  Service --> Controller: status
+  Controller --> Form: Response
+end
+
+Form --> Actor: status
+
+@enduml

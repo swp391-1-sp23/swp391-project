@@ -1,0 +1,46 @@
+@startuml 06 - Shop - Login
+
+autonumber
+autoactivate on
+
+actor Shop as Actor
+boundary Form
+control AuthController as Controller
+participant AuthService as Service
+participant AccountRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: Credential
+
+Form -> Form: Validate input pattern
+
+Form --> Form: Input pattern status
+
+opt Input pattern matched
+  Form -> Controller: HttpRequest
+  Controller -> Service: LoginAsync
+  Service -> Repo: GetAccountByEmailAsync
+  Repo -> Context: SingleAsync
+  Context -> Database: Query
+  Database --> Context: account
+  Context --> Repo: account
+  Repo --> Service: account
+
+  opt account != null
+    Service -> Service: CheckPassword
+    Service --> Service: Password status
+
+    opt Password matched
+      Service -> Service: GenerateToken
+      Service --> Service: JWT Token
+    end
+  end
+    Service --> Controller: data
+
+  Controller --> Form: Response
+end
+
+Form --> Actor: status
+
+@enduml

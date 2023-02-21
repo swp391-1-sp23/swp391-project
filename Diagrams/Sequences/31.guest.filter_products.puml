@@ -1,0 +1,28 @@
+@startuml 31 - Guest - Filter products
+
+autonumber
+autoactivate on
+
+actor Guest as Actor
+boundary Form
+control ProductController as Controller
+participant ProductService as Service
+participant ProductInStockRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: Query parameters
+Form -> Controller: HttpRequest
+Controller -> Service: GetProductCollectionAsync
+Service -> Repo: GetCollectionAsync
+Repo -> Context: Where
+Context -> Database: Query
+Database --> Context: products
+Context --> Repo: products
+Repo --> Service: products
+Service --> Controller: products
+Controller --> Form: Response
+
+Form --> Actor: products
+
+@enduml

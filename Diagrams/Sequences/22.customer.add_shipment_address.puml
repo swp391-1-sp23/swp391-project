@@ -1,0 +1,35 @@
+@startuml 22 - Customer - Add shipment address
+
+autonumber
+autoactivate on
+
+actor Customer as Actor
+boundary Form
+control AccountController as Controller
+participant ShipmentService as Service
+participant AddressRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: New address
+
+Form -> Form: Validate input pattern
+
+Form --> Form: Input pattern status
+
+opt Input pattern matched
+  Form -> Controller: HttpRequest
+  Controller -> Service: AddAddressAsync
+  Service -> Repo: AddAsync
+  Repo -> Context: AddAsync
+  Context -> Database: Insert
+  Database --> Context: status
+  Context --> Repo: status
+  Repo --> Service: status
+  Service --> Controller: status
+  Controller --> Form: Response
+end
+
+Form --> Actor: status
+
+@enduml

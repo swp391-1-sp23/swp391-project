@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using SWP391.Project.Entities;
 using SWP391.Project.Models;
 using SWP391.Project.Models.Dtos.Login;
 using SWP391.Project.Models.Dtos.Register;
@@ -19,12 +20,17 @@ namespace SWP391.Project.Controllers
             _authService = authService;
         }
 
+        /// <summary>
+        /// User login with credential
+        /// </summary>
+        /// <param name="input">Email and Password</param>
+        /// <returns></returns>
         [HttpPost(template: "login")]
-        public async Task<ActionResult<ResponseModel<LoginOutput>>> Login([FromBody] LoginInput input)
+        public async Task<ActionResult<ResponseModel<LoginOutput>>> LoginAsync([FromBody] LoginInput input)
         {
             var response = new ResponseModel<LoginOutput>();
 
-            var result = await _authService.Login(email: input.Email, password: input.Password);
+            var result = await _authService.LoginAsync(input);
 
             if (result == null)
             {
@@ -38,13 +44,18 @@ namespace SWP391.Project.Controllers
             return response;
         }
 
-
-        [HttpPost(template: "register")]
-        public async Task<ActionResult<ResponseModel<bool>>> Register([FromBody] RegisterInput input)
+        /// <summary>
+        /// User register new account with credential
+        /// </summary>
+        /// <param name="input">Email, Password</param>
+        /// <param name="role">Role</param>
+        /// <returns></returns>
+        [HttpPost(template: "register/{role}")]
+        public async Task<ActionResult<ResponseModel<bool>>> RegisterAsync([FromBody] RegisterInput input, AccountRole role = AccountRole.Customer)
         {
             var response = new ResponseModel<bool>();
 
-            var success = await _authService.Register(email: input.Email, password: input.Password, role: input.Role);
+            var success = await _authService.RegisterAsync(input, role);
 
             if (!success)
             {

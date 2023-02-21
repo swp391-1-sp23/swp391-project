@@ -1,0 +1,28 @@
+@startuml 26 - Customer - Update product quantity in cart
+
+autonumber
+autoactivate on
+
+actor Customer as Actor
+boundary Form
+control CartController as Controller
+participant CartService as Service
+participant CartRepository as Repo
+participant ProjectDbContext as Context
+database Database
+
+Actor -> Form: Product\nQuantity
+Form -> Controller: HttpRequest
+Controller -> Service: UpdateProductAsync
+Service -> Repo: UpdateAsync
+Repo -> Context: UpdateAsync
+Context -> Database: Update
+
+Database --> Context: status
+Context --> Repo: status
+Repo --> Service: status
+Service --> Controller: status
+Controller --> Form: Response
+Form --> Actor: status
+
+@enduml
