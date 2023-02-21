@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-using swp391-project.Project.Models.Dtos.Address;
+using SWP391.Project.Models.Dtos.Address;
 
-namespace swp391-project.Services
+namespace SWP391.Project.Services
 {
     public interface IShipmentService
     {

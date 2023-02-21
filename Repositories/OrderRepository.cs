@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-using swp391-project.Project.DbContexts;
-using swp391-project.Project.Entities;
+using SWP391.Project.DbContexts;
+using SWP391.Project.Entities;
 
-namespace swp391-project.Repositories
+namespace SWP391.Project.Repositories
 {
     public interface IOrderRepository : IBaseRepository<OrderEntity>
     {

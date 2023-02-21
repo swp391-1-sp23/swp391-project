@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-using swp391-project.Project.Entities;
-using swp391-project.Project.Models.Dtos.Order;
-using swp391-project.Project.Repositories;
+using SWP391.Project.Entities;
+using SWP391.Project.Models.Dtos.Order;
+using SWP391.Project.Repositories;
 
-namespace swp391-project.Services
+namespace SWP391.Project.Services
 {
     public interface IOrderService
     {

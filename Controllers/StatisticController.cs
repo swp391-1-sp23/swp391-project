@@ -1,13 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 using Microsoft.AspNetCore.Mvc;
 
-using swp391-project.Project.Services;
+using SWP391.Project.Services;
 
-namespace swp391-project.Controllers
+namespace SWP391.Project.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
