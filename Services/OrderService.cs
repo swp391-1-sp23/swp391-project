@@ -13,6 +13,9 @@ namespace SWP391.Project.Services
     {
 
         Task<bool> AddOrderAsync(AddOrderDto input);
+        Task<ICollection<OrderDto>> GetAccountOrderAsync(Guid accountId, Guid orderTag);
+        Task<ICollection<IGrouping<Guid, OrderDto>>> GetAccountOrderCollectionAsync(Guid accountId);
+        Task<ICollection<OrderDto>> GetOrderCollectionAsync(FilterOrderDto input);
         Task<bool> UpdateOrderStatusAsync(UpdateOrderStatusDto input);
     }
 
@@ -68,6 +71,20 @@ namespace SWP391.Project.Services
             bool cartUpdateSuccess = await _cartRepository.RemoveCollectionAsync(collection: currentCartProductCollection);
 
             return orderCreateSuccess && cartUpdateSuccess;
+        }
+
+        public Task<ICollection<OrderDto>> GetAccountOrderAsync(Guid accountId, Guid orderTag)
+        {
+            throw new NotImplementedException();
+        }
+public Task<ICollection<IGrouping<Guid, OrderDto>>> GetAccountOrderCollectionAsync(Guid accountId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ICollection<OrderDto>> GetOrderCollectionAsync(FilterOrderDto input)
+        {
+            throw new NotImplementedException();
         }
 
         public async Task<bool> UpdateOrderStatusAsync(UpdateOrderStatusDto input)
