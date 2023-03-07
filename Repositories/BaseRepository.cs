@@ -3,10 +3,11 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
 using SWP391.Project.DbContexts;
+using SWP391.Project.Entities;
 
 namespace SWP391.Project.Repositories
 {
-    public interface IBaseRepository<TEntity> where TEntity : class
+    public interface IBaseRepository<TEntity> where TEntity : BaseEntity
     {
         Task<TEntity?> GetByIdAsync(Guid entityId);
         Task<TEntity?> GetSingleAsync(Expression<Func<TEntity, bool>> predicate);
@@ -21,7 +22,7 @@ namespace SWP391.Project.Repositories
     }
 
     public class BaseRepository<TEntity> : IBaseRepository<TEntity>
-        where TEntity : class
+        where TEntity : BaseEntity
     {
         protected ProjectDbContext DbContext { get; }
         protected DbSet<TEntity> DbSet => DbContext.Set<TEntity>();
@@ -50,8 +51,13 @@ namespace SWP391.Project.Repositories
         public async Task<ICollection<TEntity>> GetCollectionAsync(Func<TEntity, bool>? predicate)
         {
             return predicate == null
-                ? await DbSet.AsNoTracking().ToListAsync()
-                : DbSet.AsNoTracking().Where(predicate).ToList();
+                ? await DbSet.AsNoTracking()
+                             .Where(predicate: item => item.IsDeleted == false)
+                             .ToListAsync()
+                : DbSet.AsNoTracking()
+                       .Where(predicate: item => item.IsDeleted == false)
+                       .Where(predicate)
+                       .ToList();
         }
 
         public async Task<bool> RemoveAsync(TEntity entity)
@@ -85,7 +91,9 @@ namespace SWP391.Project.Repositories
 
         public async Task<TEntity?> GetSingleAsync(Expression<Func<TEntity, bool>> predicate)
         {
-            return await DbSet.AsNoTracking().SingleOrDefaultAsync(predicate);
+            return await DbSet.AsNoTracking()
+                              .Where(predicate: item => item.IsDeleted == false)
+                              .SingleOrDefaultAsync(predicate);
         }
 
         public async Task<bool> AddCollectionAsync(ICollection<TEntity> collection)

@@ -148,8 +148,10 @@ namespace SWP391.Project.Extensions
             _ = services.AddScoped<IAuthService, AuthService>();
             _ = services.AddScoped<IAccountService, AccountService>();
             _ = services.AddScoped<ICartService, CartService>();
+            _ = services.AddScoped<IFeedbackService, FeedbackService>();
             _ = services.AddScoped<IOrderService, OrderService>();
             _ = services.AddScoped<IProductService, ProductService>();
+            _ = services.AddScoped<IShipmentService, ShipmentService>();
             _ = services.AddScoped<IStatisticService, StatisticService>();
 
             return services;

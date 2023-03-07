@@ -30,6 +30,8 @@ namespace SWP391.Project.DbContexts
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             _ = modelBuilder.Entity<AccountEntity>().Navigation(navigationExpression: exp => exp.Avatar).AutoInclude();
             _ = modelBuilder.Entity<AddressEntity>().Navigation(navigationExpression: exp => exp.Account).AutoInclude();
             _ = modelBuilder.Entity<BrandEntity>().Navigation(navigationExpression: exp => exp.Logo).AutoInclude();
@@ -46,8 +48,6 @@ namespace SWP391.Project.DbContexts
             _ = modelBuilder.Entity<ProductInStockEntity>().Navigation(navigationExpression: exp => exp.Size).AutoInclude();
             _ = modelBuilder.Entity<ProductInStockEntity>().Navigation(navigationExpression: exp => exp.Product).AutoInclude();
             // _ = modelBuilder.Entity<SizeEntity>().Navigation(navigationExpression: exp => exp.Product).AutoInclude();
-
-            base.OnModelCreating(modelBuilder);
         }
     }
 }

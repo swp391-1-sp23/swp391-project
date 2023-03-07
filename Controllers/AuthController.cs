@@ -11,7 +11,7 @@ namespace SWP391.Project.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public class AuthController : BaseController
     {
         private readonly IAuthService _authService;
 
@@ -23,25 +23,25 @@ namespace SWP391.Project.Controllers
         /// <summary>
         /// User login with credential
         /// </summary>
-        /// <param name="input">Email and Password</param>
-        /// <returns></returns>
+        /// <param name="input">Email, Password</param>
+        /// <returns>Login credential</returns>
         [HttpPost(template: "login")]
-        public async Task<ActionResult<ResponseModel<LoginOutput>>> LoginAsync([FromBody] LoginInput input)
+        public async Task<ActionResult<ResponseModel<string>>> LoginAsync([FromBody] LoginInput input)
         {
-            var response = new ResponseModel<LoginOutput>();
+            var response = new ResponseModel<string>();
 
             var result = await _authService.LoginAsync(input);
 
             if (result == null)
             {
                 response.ErrorCode = "ACCOUNT.CREDENTIAL.INVALID";
-                return response;
+                return BadRequest(response);
             };
 
             response.Success = result != null;
             response.Data = result;
 
-            return response;
+            return Ok(response);
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace SWP391.Project.Controllers
         /// </summary>
         /// <param name="input">Email, Password</param>
         /// <param name="role">Role</param>
-        /// <returns></returns>
+        /// <returns>Registered status</returns>
         [HttpPost(template: "register/{role}")]
         public async Task<ActionResult<ResponseModel<bool>>> RegisterAsync([FromBody] RegisterInput input, AccountRole role = AccountRole.Customer)
         {
@@ -60,19 +60,19 @@ namespace SWP391.Project.Controllers
             if (!success)
             {
                 response.ErrorCode = "ACCOUNT.CREATION.ERROR";
-                return response;
+                return BadRequest(response);
             }
 
             response.Success = success;
 
-            return response;
+            return Ok(response);
         }
 
-        [HttpGet(template: "check")]
+        [HttpGet(template: "checkToken")]
         [Authorize]
         public ActionResult<bool> Check()
         {
-            return true;
+            return Ok(true);
         }
     }
 }
