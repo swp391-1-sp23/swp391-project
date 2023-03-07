@@ -1,4 +1,7 @@
+using AutoMapper;
+
 using SWP391.Project.Entities;
+using SWP391.Project.Models.Dtos.Cart;
 using SWP391.Project.Models.Dtos.Product;
 using SWP391.Project.Repositories;
 
@@ -6,12 +9,12 @@ namespace SWP391.Project.Services
 {
     public interface ICartService
     {
-        Task<ICollection<CartEntity>> GetProductCollectionByAccountIdAsync(Guid accountId);
+        Task<ICollection<CartDto>> GetProductCollectionByAccountIdAsync(Guid accountId);
         Task<bool> AddCartProductAsync(AddCartProductDto input);
         Task<bool> UpdateCartProductQuantityAsync(UpdateCartProductQuantityDto input);
     }
 
-    public class CartService : ICartService
+    public class CartService : BaseService, ICartService
     {
         private readonly ICartRepository _cartRepository;
         private readonly IProductInStockRepository _inStockRepository;
@@ -19,7 +22,8 @@ namespace SWP391.Project.Services
 
         public CartService(IProductInStockRepository inStockRepository,
                            ICartRepository cartRepository,
-                           IAccountRepository accountRepository)
+                           IAccountRepository accountRepository,
+                           IMapper mapper) : base(mapper)
         {
             _inStockRepository = inStockRepository;
             _cartRepository = cartRepository;
@@ -52,12 +56,14 @@ namespace SWP391.Project.Services
             return await _cartRepository.AddAsync(entity: newCartProduct);
         }
 
-        public async Task<ICollection<CartEntity>> GetProductCollectionByAccountIdAsync(Guid accountId)
+        public async Task<ICollection<CartDto>> GetProductCollectionByAccountIdAsync(Guid accountId)
         {
-            return await _cartRepository.GetCollectionAsync(predicate: product =>
+            var products = await _cartRepository.GetCollectionAsync(predicate: product =>
                 product.Account != null
                 && product.Account.Id == accountId
             );
+
+            return Mapper.Map<ICollection<CartDto>>(products);
         }
 
         public async Task<bool> UpdateCartProductQuantityAsync(UpdateCartProductQuantityDto input)
@@ -68,8 +74,7 @@ namespace SWP391.Project.Services
             {
                 return false;
             }
-
-            existingCartProduct.Quantity = input.Quantity;
+existingCartProduct.Quantity = input.Quantity;
 
             return await _cartRepository.UpdateAsync(entity: existingCartProduct);
         }
