@@ -19,7 +19,7 @@ namespace SWP391.Project.Services
 {
     public interface IAuthService
     {
-        Task<LoginOutput?> LoginAsync(LoginInput input);
+        Task<string?> LoginAsync(LoginInput input);
         Task<bool> RegisterAsync(RegisterInput input, AccountRole role = AccountRole.Customer);
     }
 
@@ -38,7 +38,7 @@ namespace SWP391.Project.Services
             _mapper = mapper;
         }
 
-        public async Task<LoginOutput?> LoginAsync(LoginInput input)
+        public async Task<string?> LoginAsync(LoginInput input)
         {
             AccountEntity? account = await _accountRepository.GetAccountByEmailAsync(email: input.Email);
 
@@ -54,11 +54,9 @@ namespace SWP391.Project.Services
                 return null;
             }
 
-            LoginOutput loginOutput = _mapper.Map<LoginOutput>(account);
+            // LoginOutput loginOutput = _mapper.Map<LoginOutput>(account);
 
-            loginOutput.Token = GenerateJWTToken(id: account.Id, email: account.Email, role: account.Role);
-
-            return loginOutput;
+            return GenerateJWTToken(id: account.Id, email: account.Email, role: account.Role);
         }
 
         public async Task<bool> RegisterAsync(RegisterInput input, AccountRole role = AccountRole.Customer)
@@ -89,7 +87,7 @@ namespace SWP391.Project.Services
 
         private string GenerateJWTToken(Guid id, string email, AccountRole role)
         {
-            JwtSecurityTokenHandler tokenHandler = new();
+JwtSecurityTokenHandler tokenHandler = new();
             byte[] secret = Encoding.ASCII.GetBytes(s: _jwtModel.Secret);
             SecurityTokenDescriptor tokenDescriptor = new()
             {
