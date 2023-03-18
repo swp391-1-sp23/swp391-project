@@ -1,25 +1,25 @@
 using AutoMapper;
-
+ 
 using SWP391.Project.Entities;
 using SWP391.Project.Models.Dtos.Cart;
 using SWP391.Project.Models.Dtos.Product;
 using SWP391.Project.Repositories;
-
+ 
 namespace SWP391.Project.Services
 {
     public interface ICartService
     {
         Task<ICollection<CartDto>> GetProductCollectionByAccountIdAsync(Guid accountId);
-        Task<bool> AddCartProductAsync(AddCartProductDto input);
-        Task<bool> UpdateCartProductQuantityAsync(UpdateCartProductQuantityDto input);
+        Task<bool> AddCartProductAsync(Guid accountId, AddCartProductDto input);
+        Task<bool> UpdateCartProductQuantityAsync(Guid accountId, UpdateCartProductQuantityDto input);
     }
-
+ 
     public class CartService : BaseService, ICartService
     {
         private readonly ICartRepository _cartRepository;
         private readonly IProductInStockRepository _inStockRepository;
         private readonly IAccountRepository _accountRepository;
-
+ 
         public CartService(IProductInStockRepository inStockRepository,
                            ICartRepository cartRepository,
                            IAccountRepository accountRepository,
@@ -29,54 +29,63 @@ namespace SWP391.Project.Services
             _cartRepository = cartRepository;
             _accountRepository = accountRepository;
         }
-
-        public async Task<bool> AddCartProductAsync(AddCartProductDto input)
+ 
+        public async Task<bool> AddCartProductAsync(Guid accountId, AddCartProductDto input)
         {
-            CartEntity? existingCartProduct = await _cartRepository
-                .GetSingleAsync(predicate: cartProduct =>
-                    cartProduct.Account != null
-                    && cartProduct.Account.Id == input.AccountId
-                    && cartProduct.Product != null
-                    && cartProduct.Product.Id == input.ProductInStockId
+            CartEntity? cartProduct = await _cartRepository
+                .GetSingleAsync(predicate: item =>
+                    item.Account!.Id == accountId
+                    && item.Product!.Id == input.ProductInStockId
                 );
-
-            if (existingCartProduct != null)
+ 
+            if (cartProduct != null)
             {
-                existingCartProduct.Quantity = input.Quantity;
-                return await _cartRepository.UpdateAsync(entity: existingCartProduct);
+                cartProduct.Quantity = input.Quantity;
+                return await _cartRepository.UpdateAsync(entity: cartProduct);
             }
-
-            CartEntity newCartProduct = new()
+ 
+            cartProduct = new()
             {
-                Account = await _accountRepository.GetByIdAsync(entityId: input.AccountId),
+                Account = await _accountRepository.GetByIdAsync(entityId: accountId),
                 Product = await _inStockRepository.GetByIdAsync(entityId: input.ProductInStockId),
-                Quantity = input.Quantity
+                Quantity = input.Quantity,
             };
-
-            return await _cartRepository.AddAsync(entity: newCartProduct);
+ 
+            return await _cartRepository.AddAsync(entity: cartProduct);
         }
-
+ 
         public async Task<ICollection<CartDto>> GetProductCollectionByAccountIdAsync(Guid accountId)
         {
-            var products = await _cartRepository.GetCollectionAsync(predicate: product =>
-                product.Account != null
-                && product.Account.Id == accountId
+            var products = await _cartRepository.GetCollectionAsync(predicate: product => product.Account!.Id == accountId
             );
-
+ 
             return Mapper.Map<ICollection<CartDto>>(products);
         }
-
-        public async Task<bool> UpdateCartProductQuantityAsync(UpdateCartProductQuantityDto input)
+ 
+        public async Task<bool> UpdateCartProductQuantityAsync(Guid accountId, UpdateCartProductQuantityDto input)
         {
-            CartEntity? existingCartProduct = await _cartRepository.GetByIdAsync(entityId: input.CartProductId);
-
-            if (existingCartProduct == null)
+            CartEntity? cartProduct = await _cartRepository.GetByIdAsync(entityId: input.CartProductId);
+ 
+            if (cartProduct == null)
             {
                 return false;
             }
-existingCartProduct.Quantity = input.Quantity;
-
-            return await _cartRepository.UpdateAsync(entity: existingCartProduct);
+ 
+            if (input.Quantity == 0)
+            {
+                return await RemoveCartProductAsync(input.CartProductId);
+            }
+ 
+            cartProduct.Quantity = input.Quantity;
+ 
+            return await _cartRepository.UpdateAsync(entity: cartProduct);
+        }
+ 
+        private async Task<bool> RemoveCartProductAsync(Guid cartId)
+        {
+            CartEntity? existingCartProduct = await _cartRepository.GetByIdAsync(entityId: cartId);
+ 
+            return existingCartProduct != null && await _cartRepository.RemoveAsync(entity: existingCartProduct);
         }
     }
 }
