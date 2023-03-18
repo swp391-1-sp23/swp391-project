@@ -1,44 +1,52 @@
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Extensions;
 
 namespace SWP391.Project.Entities
 {
     [Index(propertyName: nameof(Email), IsUnique = true)]
     public class AccountEntity : BaseEntity
     {
-        [Required(ErrorMessage = "EMAIL.VALIDATE.EMPTY")]
-        public string Email { get; set; } = null!;
+        // [Required(ErrorMessage = "EMAIL.VALIDATE.EMPTY")]
+        public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "FNAME.VALIDATE.EMPTY")]
-        public string FirstName { get; set; } = null!;
+        // [Required(ErrorMessage = "FNAME.VALIDATE.EMPTY")]
+        public string FirstName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "LNAME.VALIDATE.EMPTY")]
-        public string LastName { get; set; } = null!;
+        // [Required(ErrorMessage = "LNAME.VALIDATE.EMPTY")]
+        public string LastName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "PHONE.VALIDATE.EMPTY")]
-        public string Phone { get; set; } = null!;
+        // [Required(ErrorMessage = "PHONE.VALIDATE.EMPTY")]
+        public string Phone { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "ROLE.VALIDATE.EMPTY")]
+        // [Required(ErrorMessage = "ROLE.VALIDATE.EMPTY")]
         public AccountRole Role { get; set; } = AccountRole.Customer;
 
-        [Required(ErrorMessage = "STATUS.VALIDATE.EMPTY")]
+        // [Required(ErrorMessage = "STATUS.VALIDATE.EMPTY")]
         public AccountStatus Status { get; set; } = AccountStatus.Activated;
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
-        [Required(ErrorMessage = "PASSWORD.VALIDATE.EMPTY")]
-        public byte[] Password { get; set; } = null!;
+        [JsonIgnore]
+        // [Required(ErrorMessage = "PASSWORD.VALIDATE.EMPTY")]
+        public byte[]? Password { get; set; }
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.Always)]
-        [Required(ErrorMessage = "SALT.VALIDATE.EMPTY")]
-        public byte[] Salt { get; set; } = null!;
+        [JsonIgnore]
+        // [Required(ErrorMessage = "SALT.VALIDATE.EMPTY")]
+        public byte[]? Salt { get; set; }
 
-        public virtual ImageEntity? Avatar { get; set; } = new ImageEntity
+        public virtual FileEntity? Avatar { get; set; } = new FileEntity
         {
             BucketName = AvailableBucket.Avatar
         };
+    }
+
+    public class AccountSimplified : BaseSimplified
+    {
+        public string Email { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public AccountRole Role { get; set; } = AccountRole.Customer;
+        public AccountStatus Status { get; set; } = AccountStatus.Activated;
     }
 
     public enum AccountStatus

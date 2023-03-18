@@ -50,7 +50,6 @@ namespace SWP391.Project.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<byte[]>("Password")
-                        .IsRequired()
                         .HasColumnType("varbinary(max)");
 
                     b.Property<string>("Phone")
@@ -61,7 +60,6 @@ namespace SWP391.Project.Migrations
                         .HasColumnType("int");
 
                     b.Property<byte[]>("Salt")
-                        .IsRequired()
                         .HasColumnType("varbinary(max)");
 
                     b.Property<int>("Status")
@@ -232,10 +230,9 @@ namespace SWP391.Project.Migrations
                     b.ToTable("Feedbacks");
                 });
 
-            modelBuilder.Entity("SWP391.Project.Entities.ImageEntity", b =>
+            modelBuilder.Entity("SWP391.Project.Entities.FileEntity", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("BucketName")
@@ -243,6 +240,14 @@ namespace SWP391.Project.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("FileExtension")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -254,7 +259,7 @@ namespace SWP391.Project.Migrations
 
                     b.HasIndex("ProductEntityId");
 
-                    b.ToTable("Images");
+                    b.ToTable("Files");
                 });
 
             modelBuilder.Entity("SWP391.Project.Entities.OrderEntity", b =>
@@ -362,7 +367,7 @@ namespace SWP391.Project.Migrations
 
                     b.HasIndex("SizeId");
 
-                    b.ToTable("InStock");
+                    b.ToTable("InStocks");
                 });
 
             modelBuilder.Entity("SWP391.Project.Entities.SizeEntity", b =>
@@ -393,7 +398,7 @@ namespace SWP391.Project.Migrations
 
             modelBuilder.Entity("SWP391.Project.Entities.AccountEntity", b =>
                 {
-                    b.HasOne("SWP391.Project.Entities.ImageEntity", "Avatar")
+                    b.HasOne("SWP391.Project.Entities.FileEntity", "Avatar")
                         .WithMany()
                         .HasForeignKey("AvatarId");
 
@@ -411,7 +416,7 @@ namespace SWP391.Project.Migrations
 
             modelBuilder.Entity("SWP391.Project.Entities.BrandEntity", b =>
                 {
-                    b.HasOne("SWP391.Project.Entities.ImageEntity", "Logo")
+                    b.HasOne("SWP391.Project.Entities.FileEntity", "Logo")
                         .WithMany()
                         .HasForeignKey("LogoId");
 
@@ -451,7 +456,7 @@ namespace SWP391.Project.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("SWP391.Project.Entities.ImageEntity", b =>
+            modelBuilder.Entity("SWP391.Project.Entities.FileEntity", b =>
                 {
                     b.HasOne("SWP391.Project.Entities.ProductEntity", null)
                         .WithMany("Images")

@@ -26,7 +26,12 @@ namespace SWP391.Project.Extensions
             _ = services.Configure<JWTModel>(
                 config: configuration.GetSection("JWT"));
 
-            _ = services.AddControllers().AddJsonOptions(configure: conf => conf.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+            _ = services.AddControllers()
+                .AddJsonOptions(configure: conf =>
+                {
+                    conf.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    conf.JsonSerializerOptions.IncludeFields = true;
+                });
 
             _ = services.AddDbContextPool<ProjectDbContext>(
                 optionsAction: builder =>
@@ -42,6 +47,7 @@ namespace SWP391.Project.Extensions
                 options.Endpoint = configuration["MinIO:Endpoint"]!;
                 options.AccessKey = configuration["MinIO:AccessKey"]!;
                 options.SecretKey = configuration["MinIO:SecretKey"]!;
+                // options.ConfigureClient(configure: client => client.Build());
             });
 
             _ = services.AddAutoMapper(assemblies: AppDomain.CurrentDomain.GetAssemblies());
@@ -137,7 +143,7 @@ namespace SWP391.Project.Extensions
             _ = services.AddScoped<ICartRepository, CartRepository>();
             _ = services.AddScoped<IColorRepository, ColorRepository>();
             _ = services.AddScoped<IFeedbackRepository, FeedbackRepository>();
-            _ = services.AddScoped<IImageRepository, ImageRepository>();
+            _ = services.AddScoped<IFileRepository, FileRepository>();
             _ = services.AddScoped<IMinioRepository, MinioRepository>();
             _ = services.AddScoped<IOrderRepository, OrderRepository>();
             _ = services.AddScoped<IProductRepository, ProductRepository>();

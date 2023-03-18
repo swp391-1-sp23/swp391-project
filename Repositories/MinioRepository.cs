@@ -11,12 +11,12 @@ namespace SWP391.Project.Repositories
     public interface IMinioRepository
     {
         Task<ICollection<string>?> GetBucketCollectionAsync();
-        Task<bool> AddBucketAsync(AvailableBucket bucketName);
-        Task<bool> RemoveBucketAsync(AvailableBucket bucketName);
-        Task<string?> GetObjectAsync(AvailableBucket bucketName, Guid objectId, string fileExt);
-        Task<ICollection<string>?> GetObjectCollectionAsync(AvailableBucket bucketName);
-        Task<bool> AddObjectAsync(AvailableBucket bucketName, Guid objectId, IFormFile file);
-        Task<bool> AddObjectCollectionAsync(AvailableBucket bucketName, ICollection<Guid> objectIdCollection, IFormFileCollection fileCollection);
+        // Task<bool> AddBucketAsync(AvailableBucket bucketName);
+        // Task<bool> RemoveBucketAsync(AvailableBucket bucketName);
+        Task<(Guid ObjectId, string? ObjectUrl)?> GetObjectAsync(AvailableBucket bucketName, (Guid objectId, string fileExtension) fileName);
+        Task<ICollection<(Guid ObjectId, string ObjectUrl)>?> GetObjectCollectionAsync(AvailableBucket bucketName, ICollection<(Guid objectId, string fileExtension)> objectCollection);
+        Task<bool> AddObjectAsync(AvailableBucket bucketName, IFormFile file, (Guid objectId, string fileExtension) fileName);
+        Task<bool> AddObjectCollectionAsync(AvailableBucket bucketName, ICollection<(Guid objectId, string fileExtension)> objectCollection, IFormFileCollection fileCollection);
         Task<bool> RemoveObjectAsync(AvailableBucket bucketName, Guid objectId);
     }
 
@@ -29,43 +29,28 @@ namespace SWP391.Project.Repositories
             _minioClient = minioClient.Build();
         }
 
-        public async Task<bool> AddBucketAsync(AvailableBucket bucket)
+        public async Task<bool> AddObjectAsync(AvailableBucket bucket, IFormFile file, (Guid objectId, string fileExtension) fileName)
         {
-            string bucketName = await IsBucketExistedAsync(bucket);
-
-            if (!string.IsNullOrEmpty(bucketName))
-            {
-                throw new Exception($"Bucket {bucketName} already exists");
-            }
-
-            try
-            {
-                MakeBucketArgs mbArgs = new MakeBucketArgs().WithBucket(bucket: bucketName);
-                await _minioClient.MakeBucketAsync(args: mbArgs);
-            }
-            catch { return false; }
-            return true;
-        }
-
-        public async Task<bool> AddObjectAsync(AvailableBucket bucket, Guid objectId, IFormFile file)
-        {
-            string bucketName = await IsBucketExistedAsync(bucket);
+            string bucketName = await EnsureBucketExistedAsync(bucket);
 
             if (string.IsNullOrEmpty(bucketName))
             {
-                _ = await AddBucketAsync(bucket);
+                return false;
             }
 
             try
             {
-                string fileExt = file.FileName.Split('.').ElementAt(index: -1);
+                (Guid objectId, string fileExtension) = fileName;
+
                 Stream fileStream = file.OpenReadStream();
+
                 PutObjectArgs poArgs = new PutObjectArgs()
                     .WithBucket(bucket: bucketName)
-                    .WithObject(obj: $"{objectId}.{fileExt}")
+                    .WithObject(obj: $"{objectId}.{fileExtension}")
                     .WithStreamData(data: fileStream)
                     .WithObjectSize(size: fileStream.Length)
                     .WithContentType(type: file.ContentType);
+
                 await _minioClient.PutObjectAsync(args: poArgs);
                 // await fileStream.DisposeAsync();
             }
@@ -73,14 +58,17 @@ namespace SWP391.Project.Repositories
             return true;
         }
 
-        public async Task<bool> AddObjectCollectionAsync(AvailableBucket bucket, ICollection<Guid> objectIdCollection, IFormFileCollection fileCollection)
+        public async Task<bool> AddObjectCollectionAsync(AvailableBucket bucket, ICollection<(Guid objectId, string fileExtension)> objectCollection, IFormFileCollection fileCollection)
         {
-            for (int index = 0; index < objectIdCollection.Count; index++)
+            for (int index = 0; index < objectCollection.Count; index++)
             {
+                (Guid objectId, string fileExtension) fileName = objectCollection.ElementAt(index);
+
                 bool success = await AddObjectAsync(
                     bucket,
-                    objectId: objectIdCollection.ElementAt(index),
-                    file: fileCollection.ElementAt(index));
+                    file: fileCollection.ElementAt(index: index),
+                    fileName);
+
                 if (!success) { return false; }
             }
             return true;
@@ -93,83 +81,86 @@ namespace SWP391.Project.Repositories
             return result.Buckets.AsReadOnly().Select(selector: item => item.Name).ToList();
         }
 
-        public async Task<string?> GetObjectAsync(AvailableBucket bucket, Guid objectId, string fileExt)
+        public async Task<(Guid ObjectId, string? ObjectUrl)?> GetObjectAsync(AvailableBucket bucket, (Guid objectId, string fileExtension) fileName)
         {
-            bool objectExisted = await IsObjectExistedAsync(bucket, objectId);
+            bool objectExisted = await IsObjectExistedAsync(bucket, fileName.objectId, fileName.fileExtension);
 
             if (!objectExisted) { return null; }
 
             try
             {
+                (Guid objectId, string fileExtension) = fileName;
+
+                DateTime currentTime = DateTime.Now;
+
                 PresignedGetObjectArgs pgoArgs = new PresignedGetObjectArgs()
                     .WithBucket(bucket: GetBucketName(bucket))
-                    .WithObject(obj: objectId.ToString() + "." + fileExt)
-                    .WithExpiry(expiry: 60 * 5);
-                return await _minioClient.PresignedGetObjectAsync(args: pgoArgs);
+                    .WithObject(obj: $"{objectId}.{fileExtension}")
+                    .WithExpiry(expiry: (60 - currentTime.Second) * (60 - currentTime.Minute) * (24 - currentTime.Hour));
+
+                return (ObjectId: objectId, ObjectUrl: await _minioClient.PresignedGetObjectAsync(args: pgoArgs));
             }
             catch { return null; }
         }
 
-        public async Task<ICollection<string>?> GetObjectCollectionAsync(AvailableBucket bucket)
+        public async Task<ICollection<(Guid ObjectId, string ObjectUrl)>?> GetObjectCollectionAsync(AvailableBucket bucket, ICollection<(Guid objectId, string fileExtension)> objectCollection)
         {
-            string bucketName = await IsBucketExistedAsync(bucket);
-
-            if (string.IsNullOrEmpty(bucketName))
-            {
-                return null;
-            }
-
             try
             {
-                ListObjectsArgs loArgs = new ListObjectsArgs()
-                    .WithBucket(bucket: bucketName);
-                // var collection = await _minioClient.ListObjectsAsync(args: loArgs).Select(selector: item => item.Key);
-                return default;
+                List<(Guid ObjectId, string ObjectUrl)> result = new();
+
+                foreach ((Guid objectId, string fileExtension) fileName in objectCollection)
+                {
+                    (Guid ObjectId, string? ObjectUrl)? resultItem = await GetObjectAsync(bucket, fileName);
+
+                    if (resultItem != null) { result.Add(resultItem.Value!); }
+                }
+
+                return result;
             }
             catch { return null; }
-        }
-
-        public async Task<bool> RemoveBucketAsync(AvailableBucket bucket)
-        {
-            string bucketName = await IsBucketExistedAsync(bucket);
-
-            if (string.IsNullOrEmpty(bucketName))
-            {
-                throw new Exception($"Bucket {bucketName} does not exist");
-            }
-
-            try
-            {
-                RemoveBucketArgs rbArgs = new RemoveBucketArgs().WithBucket(bucket: bucketName);
-                await _minioClient.RemoveBucketAsync(args: rbArgs);
-            }
-            catch { return false; }
-            return true;
         }
 
         public Task<bool> RemoveObjectAsync(AvailableBucket bucket, Guid objectId)
         {
-            _ = GetBucketName(bucket);
             throw new NotImplementedException();
         }
 
-        private async Task<bool> IsObjectExistedAsync(AvailableBucket bucket, Guid objectId)
+        private async Task<string> EnsureBucketExistedAsync(AvailableBucket bucket)
         {
             string bucketName = await IsBucketExistedAsync(bucket);
 
-            if (string.IsNullOrEmpty(bucketName))
+            if (!string.IsNullOrEmpty(bucketName))
             {
-                return false;
+                return bucketName;
             }
+
+            try
+            {
+                bucketName = GetBucketName(bucket);
+
+                MakeBucketArgs mbArgs = new MakeBucketArgs().WithBucket(bucket: bucketName);
+
+                await _minioClient.MakeBucketAsync(args: mbArgs);
+            }
+            catch { return string.Empty; }
+
+            return bucketName;
+        }
+
+        private async Task<bool> IsObjectExistedAsync(AvailableBucket bucket, Guid objectId, string fileExtension)
+        {
+            string bucketName = await EnsureBucketExistedAsync(bucket);
 
             try
             {
                 StatObjectArgs soArgs = new StatObjectArgs()
                     .WithBucket(bucket: bucketName)
-                    .WithObject(obj: objectId.ToString());
+                    .WithObject(obj: $"{objectId}.{fileExtension}");
+
                 Minio.DataModel.ObjectStat existingObject = await _minioClient.StatObjectAsync(args: soArgs);
 
-                return existingObject == null;
+                return existingObject != null;
             }
             catch { return false; }
         }
@@ -180,16 +171,17 @@ namespace SWP391.Project.Repositories
             try
             {
                 BucketExistsArgs beArgs = new BucketExistsArgs().WithBucket(bucket: bucketName);
-                bool existedBucket = await _minioClient.BucketExistsAsync(args: beArgs);
 
-                return bucketName;
+                bool bucketExisted = await _minioClient.BucketExistsAsync(args: beArgs);
+
+                return bucketExisted ? bucketName : string.Empty;
             }
             catch { return string.Empty; }
         }
 
         private static string GetBucketName(AvailableBucket bucket)
         {
-            return bucket.GetDisplayName();
+            return bucket.GetDisplayName().ToLower();
         }
     }
 }

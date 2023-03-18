@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SWP391.Project.Entities
@@ -8,9 +7,16 @@ namespace SWP391.Project.Entities
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
 
-        [Required(ErrorMessage = "CREATED.VALIDATE.EMPTY")]
+        // [Required(ErrorMessage = "CREATED.VALIDATE.EMPTY")]
         public DateTime CreatedAt { get; init; } = DateTime.Now;
 
         public bool IsDeleted { get; set; } = false;
+    }
+
+    public class BaseSimplified
+    {
+        public Guid Id { get; set; }
+        // public DateTime CreatedAt { get; init; } = DateTime.Now;
+        // public bool IsDeleted { get; set; } = false;
     }
 }

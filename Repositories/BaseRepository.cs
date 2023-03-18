@@ -10,8 +10,8 @@ namespace SWP391.Project.Repositories
     public interface IBaseRepository<TEntity> where TEntity : BaseEntity
     {
         Task<TEntity?> GetByIdAsync(Guid entityId);
-        Task<TEntity?> GetSingleAsync(Expression<Func<TEntity, bool>> predicate);
-        Task<ICollection<TEntity>> GetCollectionAsync(Func<TEntity, bool>? predicate);
+        Task<TEntity?> GetSingleAsync(Expression<Func<TEntity, bool>> predicate, bool ignoreDeleted = false);
+        Task<ICollection<TEntity>> GetCollectionAsync(Func<TEntity, bool>? predicate = null);
         Task<bool> AddAsync(TEntity entity);
         Task<bool> AddCollectionAsync(ICollection<TEntity> collection);
         Task<bool> UpdateAsync(TEntity entity);
@@ -48,7 +48,7 @@ namespace SWP391.Project.Repositories
             return await DbSet.FindAsync(keyValues: entityId);
         }
 
-        public async Task<ICollection<TEntity>> GetCollectionAsync(Func<TEntity, bool>? predicate)
+        public async Task<ICollection<TEntity>> GetCollectionAsync(Func<TEntity, bool>? predicate = null)
         {
             return predicate == null
                 ? await DbSet.AsNoTracking()
@@ -64,7 +64,10 @@ namespace SWP391.Project.Repositories
         {
             try
             {
-                _ = DbSet.Remove(entity);
+                entity.IsDeleted = true;
+
+                // _ = DbSet.Remove(entity);
+                _ = DbSet.Update(entity);
                 _ = await SaveChangesAsync();
             }
             catch { return false; }
@@ -89,11 +92,16 @@ namespace SWP391.Project.Repositories
             return true;
         }
 
-        public async Task<TEntity?> GetSingleAsync(Expression<Func<TEntity, bool>> predicate)
+        public async Task<TEntity?> GetSingleAsync(Expression<Func<TEntity, bool>> predicate, bool ignoreDeleted = false)
         {
-            return await DbSet.AsNoTracking()
-                              .Where(predicate: item => item.IsDeleted == false)
-                              .SingleOrDefaultAsync(predicate);
+            return ignoreDeleted switch
+            {
+                true => await DbSet.AsNoTracking()
+                                   .SingleOrDefaultAsync(predicate),
+                false => await DbSet.AsNoTracking()
+                                    .Where(predicate: item => item.IsDeleted == false)
+                                    .SingleOrDefaultAsync(predicate),
+            };
         }
 
         public async Task<bool> AddCollectionAsync(ICollection<TEntity> collection)

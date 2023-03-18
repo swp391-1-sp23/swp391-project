@@ -15,8 +15,8 @@ namespace SWP391.Project.DbContexts
         public DbSet<OrderEntity> Orders { get; set; } = null!;
         public DbSet<ProductEntity> Products { get; set; } = null!;
         public DbSet<SizeEntity> Sizes { get; set; } = null!;
-        public DbSet<ImageEntity> Images { get; set; } = null!;
-        public DbSet<ProductInStockEntity> InStock { get; set; } = null!;
+        public DbSet<FileEntity> Files { get; set; } = null!;
+        public DbSet<ProductInStockEntity> InStocks { get; set; } = null!;
 
         public ProjectDbContext(DbContextOptions<ProjectDbContext> opts) : base(options: opts)
         {
@@ -37,7 +37,7 @@ namespace SWP391.Project.DbContexts
             _ = modelBuilder.Entity<BrandEntity>().Navigation(navigationExpression: exp => exp.Logo).AutoInclude();
             _ = modelBuilder.Entity<CartEntity>().Navigation(navigationExpression: exp => exp.Account).AutoInclude();
             _ = modelBuilder.Entity<CartEntity>().Navigation(navigationExpression: exp => exp.Product).AutoInclude();
-            // _ = modelBuilder.Entity<ColorEntity>().Navigation(navigationExpression: exp => exp.Product).AutoInclude();
+            _ = modelBuilder.Entity<ColorEntity>().Navigation(navigationExpression: exp => exp.Product).AutoInclude();
             _ = modelBuilder.Entity<FeedbackEntity>().Navigation(navigationExpression: exp => exp.Order).AutoInclude();
             _ = modelBuilder.Entity<OrderEntity>().Navigation(navigationExpression: exp => exp.Product).AutoInclude();
             _ = modelBuilder.Entity<OrderEntity>().Navigation(navigationExpression: exp => exp.ShipmentAddress).AutoInclude();
@@ -47,7 +47,7 @@ namespace SWP391.Project.DbContexts
             _ = modelBuilder.Entity<ProductInStockEntity>().Navigation(navigationExpression: exp => exp.Color).AutoInclude();
             _ = modelBuilder.Entity<ProductInStockEntity>().Navigation(navigationExpression: exp => exp.Size).AutoInclude();
             _ = modelBuilder.Entity<ProductInStockEntity>().Navigation(navigationExpression: exp => exp.Product).AutoInclude();
-            // _ = modelBuilder.Entity<SizeEntity>().Navigation(navigationExpression: exp => exp.Product).AutoInclude();
+            _ = modelBuilder.Entity<SizeEntity>().Navigation(navigationExpression: exp => exp.Product).AutoInclude();
         }
     }
 }

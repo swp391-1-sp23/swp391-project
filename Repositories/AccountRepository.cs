@@ -5,7 +5,7 @@ namespace SWP391.Project.Repositories
 {
     public interface IAccountRepository : IBaseRepository<AccountEntity>
     {
-        Task<AccountEntity?> GetAccountByEmailAsync(string email);
+        Task<AccountEntity?> GetByEmailAsync(string email);
     }
 
     public class AccountRepository :
@@ -15,9 +15,9 @@ namespace SWP391.Project.Repositories
         {
         }
 
-        public async Task<AccountEntity?> GetAccountByEmailAsync(string email)
+        public async Task<AccountEntity?> GetByEmailAsync(string email)
         {
-            return await GetSingleAsync(predicate: item => item.Email == email);
+            return await GetSingleAsync(predicate: item => item.Email == email, ignoreDeleted: true);
         }
 
     }

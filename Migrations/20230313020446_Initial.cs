@@ -22,8 +22,8 @@ namespace SWP391.Project.Migrations
                     Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Role = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    Password = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
-                    Salt = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
+                    Password = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
+                    Salt = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
                     AvatarId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
@@ -116,20 +116,22 @@ namespace SWP391.Project.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Images",
+                name: "Files",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BucketName = table.Column<int>(type: "int", nullable: false),
+                    FileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FileExtension = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ProductEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Images", x => x.Id);
+                    table.PrimaryKey("PK_Files", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Images_Products_ProductEntityId",
+                        name: "FK_Files_Products_ProductEntityId",
                         column: x => x.ProductEntityId,
                         principalTable: "Products",
                         principalColumn: "Id");
@@ -156,7 +158,7 @@ namespace SWP391.Project.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "InStock",
+                name: "InStocks",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -169,19 +171,19 @@ namespace SWP391.Project.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_InStock", x => x.Id);
+                    table.PrimaryKey("PK_InStocks", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_InStock_Colors_ColorId",
+                        name: "FK_InStocks_Colors_ColorId",
                         column: x => x.ColorId,
                         principalTable: "Colors",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_InStock_Products_ProductId",
+                        name: "FK_InStocks_Products_ProductId",
                         column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_InStock_Sizes_SizeId",
+                        name: "FK_InStocks_Sizes_SizeId",
                         column: x => x.SizeId,
                         principalTable: "Sizes",
                         principalColumn: "Id");
@@ -207,9 +209,9 @@ namespace SWP391.Project.Migrations
                         principalTable: "Accounts",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Carts_InStock_ProductId",
+                        name: "FK_Carts_InStocks_ProductId",
                         column: x => x.ProductId,
-                        principalTable: "InStock",
+                        principalTable: "InStocks",
                         principalColumn: "Id");
                 });
 
@@ -236,9 +238,9 @@ namespace SWP391.Project.Migrations
                         principalTable: "Addresses",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Orders_InStock_ProductId",
+                        name: "FK_Orders_InStocks_ProductId",
                         column: x => x.ProductId,
-                        principalTable: "InStock",
+                        principalTable: "InStocks",
                         principalColumn: "Id");
                 });
 
@@ -305,23 +307,23 @@ namespace SWP391.Project.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Images_ProductEntityId",
-                table: "Images",
+                name: "IX_Files_ProductEntityId",
+                table: "Files",
                 column: "ProductEntityId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_InStock_ColorId",
-                table: "InStock",
+                name: "IX_InStocks_ColorId",
+                table: "InStocks",
                 column: "ColorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_InStock_ProductId",
-                table: "InStock",
+                name: "IX_InStocks_ProductId",
+                table: "InStocks",
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_InStock_SizeId",
-                table: "InStock",
+                name: "IX_InStocks_SizeId",
+                table: "InStocks",
                 column: "SizeId");
 
             migrationBuilder.CreateIndex(
@@ -345,17 +347,17 @@ namespace SWP391.Project.Migrations
                 column: "ProductId");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Accounts_Images_AvatarId",
+                name: "FK_Accounts_Files_AvatarId",
                 table: "Accounts",
                 column: "AvatarId",
-                principalTable: "Images",
+                principalTable: "Files",
                 principalColumn: "Id");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Brands_Images_LogoId",
+                name: "FK_Brands_Files_LogoId",
                 table: "Brands",
                 column: "LogoId",
-                principalTable: "Images",
+                principalTable: "Files",
                 principalColumn: "Id");
         }
 
@@ -363,7 +365,7 @@ namespace SWP391.Project.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_Brands_Images_LogoId",
+                name: "FK_Brands_Files_LogoId",
                 table: "Brands");
 
             migrationBuilder.DropTable(
@@ -379,7 +381,7 @@ namespace SWP391.Project.Migrations
                 name: "Addresses");
 
             migrationBuilder.DropTable(
-                name: "InStock");
+                name: "InStocks");
 
             migrationBuilder.DropTable(
                 name: "Accounts");
@@ -391,7 +393,7 @@ namespace SWP391.Project.Migrations
                 name: "Sizes");
 
             migrationBuilder.DropTable(
-                name: "Images");
+                name: "Files");
 
             migrationBuilder.DropTable(
                 name: "Products");

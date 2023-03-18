@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 using AutoMapper;
 
 using SWP391.Project.Entities;
@@ -14,7 +9,12 @@ namespace SWP391.Project.MapperProfiles
     {
         public OrderProfile()
         {
-            CreateMap<OrderEntity, OrderDto>();
+            _ = CreateMap<OrderEntity, OrderDto>()
+                .ForMember(destinationMember: destination => destination.Product, memberOptions: options => options.Ignore())
+                .ForMember(destinationMember: destination => destination.Color, memberOptions: options => options.Ignore())
+                .ForMember(destinationMember: destination => destination.Size, memberOptions: options => options.Ignore());
+
+            _ = CreateMap<OrderEntity, OrderSimplified>();
         }
     }
 }
