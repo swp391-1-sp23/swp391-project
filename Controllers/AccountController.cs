@@ -1,16 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+ 
 using SWP391.Project.Models;
 using SWP391.Project.Models.Dtos.Account;
 using SWP391.Project.Models.Dtos.Address;
 using SWP391.Project.Models.Dtos.Cart;
-using SWP391.Project.Models.Dtos.Feedback;
 using SWP391.Project.Models.Dtos.Image;
 using SWP391.Project.Models.Dtos.Order;
 using SWP391.Project.Models.Dtos.Product;
 using SWP391.Project.Services;
-
+ 
 namespace SWP391.Project.Controllers
 {
     public interface IAccountController
@@ -38,29 +37,30 @@ namespace SWP391.Project.Controllers
         // [Authorize] OWN
         Task<ActionResult<ResponseModel<bool>>> AddCartProductAsync([FromBody] AddCartProductDto input);
         // [Authorize] OWN
-        Task<ActionResult<ResponseModel<bool>>> UpdateCartProductQuantityAsync([FromBody] UpdateCartProductQuantityDto input);
+        Task<ActionResult<ResponseModel<bool>>> UpdateCartProductQuantityAsync([FromRoute] Guid cartId, [FromBody] UpdateCartProductQuantityDto input);
         // [Authorize] OWN
-        Task<ActionResult<ResponseModel<bool>>> RemoveCartProductAsync([FromRoute] Guid cartId);
+        // Task<ActionResult<ResponseModel<bool>>> RemoveCartProductAsync([FromRoute] Guid cartId);
         // [Authorize] OWN
-        Task<ActionResult<ResponseModel<ICollection<IGrouping<Guid, OrderDto>>>>> GetOrderCollectionAsync();
+        Task<ActionResult<ResponseModel<IDictionary<Guid, List<OrderDto>>>>> GetOrderCollectionAsync();
         // [Authorize] OWN
         Task<ActionResult<ResponseModel<ICollection<OrderDto>>>> GetOrderAsync([FromRoute] Guid orderTag);
         // [Authorize] OWN
-        Task<ActionResult<ResponseModel<bool>>> UpdateOrderStatusAsync([FromBody] UpdateOrderStatusDto input);
+        Task<ActionResult<ResponseModel<bool>>> UpdateOrderStatusAsync([FromRoute] Guid orderTag, [FromBody] UpdateOrderStatusDto input);
         // [Authorize] OWN
-        Task<ActionResult<ResponseModel<bool>>> AddFeedbackAsync([FromBody] AddFeedbackDto input);
+        // Task<ActionResult<ResponseModel<bool>>> AddFeedbackAsync([FromBody] AddFeedbackDto input);
+        Task<ActionResult<ResponseModel<bool>>> AddOrderAsync(AddOrderDto input);
     }
-
+ 
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api")]
     public class AccountController : BaseController, IAccountController
     {
         private readonly IAccountService _accountService;
         private readonly ICartService _cartService;
-private readonly IOrderService _orderService;
+        private readonly IOrderService _orderService;
         private readonly IFeedbackService _feedbackService;
         private readonly IShipmentService _shipmentService;
-
+ 
         public AccountController(IAccountService accountService,
                                  ICartService cartService,
                                  IOrderService orderService,
@@ -73,309 +73,346 @@ private readonly IOrderService _orderService;
             _feedbackService = feedbackService;
             _shipmentService = shipmentService;
         }
-
-        [HttpPost(template: "account/address")]
+ 
+        [HttpPost(template: "address")]
         [Authorize(Roles = "Customer")]
         public async Task<ActionResult<ResponseModel<bool>>> AddAddressAsync([FromBody] AddAddressDto input)
         {
-            var response = new ResponseModel<bool>();
-
-            if (!IsAccountOwner(input.AccountId))
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _shipmentService.AddShipmentAddressAsync(AccountId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
             {
-                response.Success = false;
-                response.ErrorCode = "CREDENTIAL.VALIDATION.ERROR";
-                return Unauthorized(response);
-            }
-
-            var success = await _shipmentService.AddShipmentAddressAsync(input: input);
-
-            if (!success)
-            {
-                response.Success = false;
-                response.ErrorCode = "ADDRESS.CREATION.ERROR";
+                response.ErrorCode = "ADDRESS.CREATE.ERROR";
                 return BadRequest(response);
             }
-
-            response.Success = success;
-
+ 
             return Ok(response);
         }
-
-        [HttpPost(template: "account/cart")]
+ 
+        [HttpPost(template: "cart")]
         [Authorize(Roles = "Customer")]
         public async Task<ActionResult<ResponseModel<bool>>> AddCartProductAsync([FromBody] AddCartProductDto input)
         {
-            var response = new ResponseModel<bool>();
-
-            if (!IsAccountOwner(input.AccountId))
-            {
-                response.Success = false;
-                response.ErrorCode = "CREDENTIAL.VALIDATION.ERROR";
-                return BadRequest(response);
-            }
-
-            var success = await _cartService.AddCartProductAsync(input: input);
-
-            if (!success)
-            {
-                response.Success = false;
-                response.ErrorCode = "CART.CREATION.ERROR";
-                return BadRequest(response);
-            }
-
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _cartService.AddCartProductAsync(AccountId, input);
+ 
             response.Success = success;
-
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "CART.CREATE.ERROR";
+                return BadRequest(response);
+            }
+ 
             return Ok(response);
         }
-
-        [HttpPost(template: "account/feedback")]
+ 
+        [HttpPost(template: "order")]
         [Authorize(Roles = "Customer")]
-        public async Task<ActionResult<ResponseModel<bool>>> AddFeedbackAsync([FromBody] AddFeedbackDto input)
+        public async Task<ActionResult<ResponseModel<bool>>> AddOrderAsync(AddOrderDto input)
         {
-            var response = new ResponseModel<bool>();
-
-            if (!IsAccountOwner(input.AccountId))
-            {
-                response.Success = false;
-                response.ErrorCode = "CREDENTIAL.VALIDATION.ERROR";
-                return BadRequest(response);
-            }
-var success = await _feedbackService.AddFeedbackAsync(input: input);
-
-            if (!success)
-            {
-                response.Success = false;
-                response.ErrorCode = "FEEDBACK.CREATION.ERROR";
-                return BadRequest(response);
-            }
-
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _orderService.AddOrderAsync(accountId: AccountId, input);
+ 
             response.Success = success;
-
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "ORDER.CREATE.ERROR";
+                return BadRequest(response);
+            }
+ 
             return Ok(response);
         }
-
-        [HttpGet(template: "account/profile")]
-        [Authorize]
+ 
+        // [HttpPost(template: "account/feedback")]
+        // [Authorize(Roles = "Customer")]
+        // public async Task<ActionResult<ResponseModel<bool>>> AddFeedbackAsync([FromBody] AddFeedbackDto input)
+        // {
+        //     var response = new ResponseModel<bool>();
+ 
+        //     var success = await _feedbackService.AddFeedbackAsync(AccountId, input: input);
+ 
+        //     if (!success)
+        //     {
+        //         response.Success = false;
+        //         response.ErrorCode = "FEEDBACK.CREATION.ERROR";
+        //         return BadRequest(response);
+        //     }
+ 
+        //     response.Success = success;
+ 
+        //     return Ok(response);
+        // }
+ 
+        [HttpGet(template: "profile")]
         public async Task<ActionResult<ResponseModel<AccountDto>>> GetAccountAsync()
         {
-            var response = new ResponseModel<AccountDto>();
-
-            var account = await _accountService.GetAccountAsync(AccountId);
-
-            if (account == null)
+            ResponseModel<AccountDto> response = new();
+ 
+            AccountDto? account = await _accountService.GetAccountAsync(AccountId);
+ 
+            response.Success = account != null;
+ 
+            if (!response.Success)
             {
-                response.Success = false;
                 response.ErrorCode = "ACCOUNT.FIND.ERROR";
                 return NotFound(response);
             }
-
-            response.Success = account != null;
+ 
             response.Data = account;
-
             return Ok(response);
         }
-
+ 
         [HttpGet(template: "account")]
         [Authorize(Roles = "Shop")]
         public async Task<ActionResult<ResponseModel<ICollection<AccountDto>>>> GetAccountCollectionAsync([FromQuery] FilterAccountDto? filter)
         {
-            var response = new ResponseModel<ICollection<AccountDto>>();
-
-            var accounts = await _accountService.GetAccountCollectionAsync(filter ?? new());
-
-            if (accounts == null)
+            ResponseModel<ICollection<AccountDto>> response = new();
+ 
+            ICollection<AccountDto>? accounts = await _accountService.GetAccountCollectionAsync(filter);
+ 
+            response.Success = accounts != null;
+ 
+            if (!response.Success)
             {
-                response.Success = false;
                 response.ErrorCode = "ACCOUNT_COLLECTION.FIND.ERROR";
                 return NotFound(response);
             }
-
-            response.Success = accounts != null;
+ 
             response.Data = accounts;
-
             return Ok(response);
         }
-
+ 
         // [HttpGet(template: "account/address/{addressId}")]
         // [Authorize]
         // public async Task<ActionResult<ResponseModel<AddressDto>>> GetAddressAsync([FromRoute] Guid addressId)
         // {
         //     var response = new ResponseModel<AddressDto>();
-
+ 
         //     var address = await _shipmentService.GetShipmentAddressAsync(addressId);
-
+ 
         //     if (address == null)
         //     {
         //         response.Success = false;
         //         response.ErrorCode = "ADDRESS.FIND.ERROR";
         //         return BadRequest(response);
         //     }
-
+ 
         //     response.Success = address != null;
         //     response.Data = address;
-
+ 
         //     return Ok(response);
         // }
-
-        [HttpGet(template: "account/address")]
+ 
+        [HttpGet(template: "address")]
         [Authorize(Roles = "Customer")]
         public async Task<ActionResult<ResponseModel<ICollection<AddressDto>>>> GetAddressCollectionAsync()
         {
-            var response = new ResponseModel<ICollection<AddressDto>>();
-
-            var addresses = await _shipmentService.GetShipmentAddressCollectionAsync(AccountId);
-
-            if (addresses == null)
-            {
-                response.Success = false;
-response.ErrorCode = "ADDRESS_COLLECTION.FIND.ERROR";
-                return BadRequest(response);
-            }
-
+            ResponseModel<ICollection<AddressDto>> response = new();
+ 
+            ICollection<AddressDto>? addresses = await _shipmentService.GetShipmentAddressCollectionAsync(AccountId);
+ 
             response.Success = addresses != null;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "ADDRESS_COLLECTION.FIND.ERROR";
+                return NotFound(response);
+            }
+ 
             response.Data = addresses;
-
             return Ok(response);
         }
-
-        [HttpGet(template: "account/cart")]
+ 
+        [HttpGet(template: "cart")]
         [Authorize(Roles = "Customer")]
         public async Task<ActionResult<ResponseModel<ICollection<CartDto>>>> GetCartProductsAsync()
         {
-            var response = new ResponseModel<ICollection<CartDto>>();
-
-            var products = await _cartService.GetProductCollectionByAccountIdAsync(AccountId);
-
-            if (products == null)
-            {
-                response.Success = false;
-                response.ErrorCode = "PRODUCT_COLLECTION.FIND.ERROR";
-                return BadRequest(response);
-            }
-
+            ResponseModel<ICollection<CartDto>> response = new();
+ 
+            ICollection<CartDto>? products = await _cartService.GetProductCollectionByAccountIdAsync(AccountId);
+ 
             response.Success = products != null;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT_COLLECTION.FIND.ERROR";
+                return NotFound(response);
+            }
+ 
             response.Data = products;
-
             return Ok(response);
         }
-
-        [HttpGet(template: "account/order/{orderTag}")]
+ 
+        [HttpGet(template: "order/{orderTag}")]
         [Authorize]
         public async Task<ActionResult<ResponseModel<ICollection<OrderDto>>>> GetOrderAsync([FromRoute] Guid orderTag)
         {
-            var response = new ResponseModel<ICollection<OrderDto>>();
-
-            var orders = await _orderService.GetAccountOrderAsync(AccountId, orderTag);
-
-            if (orders == null)
+            ResponseModel<ICollection<OrderDto>> response = new();
+ 
+            ICollection<OrderDto>? orders = await _orderService.GetAccountOrderAsync(AccountId, orderTag);
+ 
+            response.Success = orders != null;
+ 
+            if (!response.Success)
             {
-                response.Success = false;
                 response.ErrorCode = "ORDER.FIND.ERROR";
                 return NotFound(response);
             }
-
-            response.Success = orders != null;
+ 
             response.Data = orders;
-
             return Ok(response);
         }
-
-        [HttpGet(template: "account/order")]
+ 
+        [HttpGet(template: "order")]
         [Authorize]
-        public async Task<ActionResult<ResponseModel<ICollection<IGrouping<Guid, OrderDto>>>>> GetOrderCollectionAsync()
+        public async Task<ActionResult<ResponseModel<IDictionary<Guid, List<OrderDto>>>>> GetOrderCollectionAsync()
         {
-            var response = new ResponseModel<ICollection<IGrouping<Guid, OrderDto>>>();
-
-            var orders = await _orderService.GetAccountOrderCollectionAsync(AccountId);
-
-            if (orders == null)
+            ResponseModel<IDictionary<Guid, List<OrderDto>>> response = new();
+ 
+            IDictionary<Guid, List<OrderDto>>? orders = await _orderService.GetAccountOrderCollectionAsync(AccountId);
+ 
+            response.Success = orders != null;
+ 
+            if (!response.Success)
             {
-                response.Success = false;
                 response.ErrorCode = "ORDER_COLLECTION.FIND.ERROR";
                 return NotFound(response);
             }
-
-            response.Success = orders != null;
+ 
             response.Data = orders;
-
             return Ok(response);
         }
-
+ 
         [HttpDelete(template: "account/{accountId}")]
         [Authorize(Roles = "Shop")]
         public async Task<ActionResult<ResponseModel<bool>>> RemoveAccountAsync([FromRoute] Guid accountId)
         {
-            var response = new ResponseModel<bool>();
-
-            var success = await _accountService.RemoveCustomerAccountAsync(accountId);
-
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _accountService.RemoveCustomerAccountAsync(accountId);
+ 
+            response.Success = success;
+ 
             if (!success)
             {
-                response.Success = false;
-                response.ErrorCode = "ACCOUNT.DELETION.ERROR";
+                response.ErrorCode = "ACCOUNT.DELETE.ERROR";
                 return BadRequest(response);
             }
-
-            response.Success = success;
-return Ok(response);
+ 
+            return Ok(response);
         }
-
-        [HttpDelete(template: "account/address/{addressId}")]
+ 
+        [HttpDelete(template: "address/{addressId}")]
         [Authorize(Roles = "Customer")]
         public async Task<ActionResult<ResponseModel<bool>>> RemoveAddressAsync([FromRoute] Guid addressId)
         {
-            var response = new ResponseModel<bool>();
-
-            if (!IsAccountOwner(AccountId))
-            {
-                response.Success = false;
-                response.ErrorCode = "CREDENTIAL.VALIDATION.ERROR";
-                return BadRequest(response);
-            }
-
-            var success = await _shipmentService.RemoveShipmentAddressAsync(addressId);
-
-            if (!success)
-            {
-                response.Success = false;
-                response.ErrorCode = "ADDRESS.DELETION.ERROR";
-                return BadRequest(response);
-            }
-
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _shipmentService.RemoveShipmentAddressAsync(AccountId, addressId);
+ 
             response.Success = success;
-
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "ADDRESS.DELETE.ERROR";
+                return BadRequest(response);
+            }
+ 
             return Ok(response);
         }
-
-        [HttpDelete(template: "account/cart/{cartId}")]
-        public Task<ActionResult<ResponseModel<bool>>> RemoveCartProductAsync([FromRoute] Guid cartId)
+ 
+        // [HttpDelete(template: "account/cart/{cartId}")]
+        // public Task<ActionResult<ResponseModel<bool>>> RemoveCartProductAsync([FromRoute] Guid cartId)
+        // {
+        //     var response = new ResponseModel<bool>();
+ 
+        //     var success = _cartService.(cartId);
+ 
+        //     throw new NotImplementedException();
+        // }
+ 
+        [HttpPut(template: "profile")]
+        [Authorize]
+        public async Task<ActionResult<ResponseModel<bool>>> UpdateAccountAsync([FromBody] UpdateAccountDto input)
         {
-            var response = new ResponseModel<bool>();
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _accountService.UpdateAccountAsync(AccountId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "ACCOUNT.UPDATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        [HttpPut(template: "account/profile")]
-        public Task<ActionResult<ResponseModel<bool>>> UpdateAccountAsync([FromBody] UpdateAccountDto input)
+ 
+        [HttpPost(template: "avatar")]
+        [Authorize]
+        public async Task<ActionResult<ResponseModel<bool>>> UpdateAccountAvatarAsync([FromForm] UpdateAccountAvatarDto input)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _accountService.UpdateAccountAvatarAsync(AccountId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "AVATAR.UPDATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        [HttpPost(template: "account/avatar")]
-        public Task<ActionResult<ResponseModel<bool>>> UpdateAccountAvatarAsync([FromForm] UpdateAccountAvatarDto input)
+ 
+        [HttpPut(template: "cart/{cartId}")]
+        [Authorize(Roles = "Customer")]
+        public async Task<ActionResult<ResponseModel<bool>>> UpdateCartProductQuantityAsync([FromRoute] Guid cartId, [FromBody] UpdateCartProductQuantityDto input)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _cartService.UpdateCartProductQuantityAsync(AccountId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "CART_PRODUCT.UPDATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        [HttpPut(template: "account/cart/{cartId}")]
-        public Task<ActionResult<ResponseModel<bool>>> UpdateCartProductQuantityAsync([FromBody] UpdateCartProductQuantityDto input)
+ 
+        [HttpPut(template: "order/{orderTag}")]
+        [Authorize]
+        public async Task<ActionResult<ResponseModel<bool>>> UpdateOrderStatusAsync([FromRoute] Guid orderTag, [FromBody] UpdateOrderStatusDto input)
         {
-            throw new NotImplementedException();
-        }
-
-        [HttpPut(template: "account/feedback/{feedbackId}")]
-        public Task<ActionResult<ResponseModel<bool>>> UpdateOrderStatusAsync([FromBody] UpdateOrderStatusDto input)
-        {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _orderService.UpdateOrderStatusAsync(AccountId, orderTag, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "ORDER.UPDATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
     }
 }
