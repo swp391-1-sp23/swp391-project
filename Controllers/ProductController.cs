@@ -1,157 +1,448 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+ 
+using SWP391.Project.Models;
 using SWP391.Project.Models.Dtos.Brand;
 using SWP391.Project.Models.Dtos.Image;
 using SWP391.Project.Models.Dtos.Product;
 using SWP391.Project.Services;
-
+ 
 namespace SWP391.Project.Controllers
 {
     public interface IProductController
     {
-        Task<ActionResult> GetProductAsync([FromRoute] Guid productId);
-        Task<ActionResult> GetProductCollectionAsync([FromQuery] FilterProductDto input);
+        Task<ActionResult<ResponseModel<ProductDto>>> GetProductAsync([FromRoute] Guid productId);
+        Task<ActionResult<ResponseModel<ICollection<ProductDto>>>> GetProductCollectionAsync([FromQuery] FilterProductDto? input = null);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> AddProductAsync([FromBody] AddProductDto input);
+        Task<ActionResult<ResponseModel<bool>>> AddProductAsync([FromBody][FromRoute] Guid brandId, AddProductDto input);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> UpdateProductAsync([FromBody] UpdateProductDto input);
+        Task<ActionResult<ResponseModel<bool>>> UpdateProductAsync([FromRoute] Guid productId, [FromBody] UpdateProductDto input);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> RemoveProductAsync([FromRoute] Guid productId);
+        Task<ActionResult<ResponseModel<bool>>> RemoveProductAsync([FromRoute] Guid productId);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> AddProductSizesAsync([FromBody] AddProductSizesDto input);
+        Task<ActionResult<ResponseModel<bool>>> AddProductSizesAsync([FromRoute] Guid productId, [FromBody] AddProductSizesDto input);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> RemoveProductSizeAsync([FromRoute] Guid sizeId);
+        Task<ActionResult<ResponseModel<bool>>> RemoveProductSizeAsync([FromRoute] Guid productId, [FromRoute] Guid sizeId);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> AddProductColorsAsync([FromBody] AddProductColorsDto input);
+        Task<ActionResult<ResponseModel<bool>>> AddProductColorsAsync([FromRoute] Guid productId, [FromBody] AddProductColorsDto input);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> RemoveProductColorsAsync([FromRoute] Guid colorId);
+        Task<ActionResult<ResponseModel<bool>>> RemoveProductColorAsync([FromRoute] Guid productId, [FromRoute] Guid colorId);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> AddProductQuantityAsync([FromBody] AddProductQuantityDto input);
+        Task<ActionResult<ResponseModel<bool>>> AddProductQuantityAsync([FromRoute] Guid productId, [FromBody] AddProductQuantityDto input);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> UpdateProductQuantityAsync([FromBody] UpdateProductQuantityDto input);
+        Task<ActionResult<ResponseModel<bool>>> UpdateProductQuantityAsync([FromRoute] Guid productId, [FromBody] UpdateProductQuantityDto input);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> AddProductImagesAsync([FromForm] AddProductImagesDto input);
+        Task<ActionResult<ResponseModel<bool>>> AddProductImagesAsync([FromRoute] Guid productId, [FromForm] AddProductImagesDto input);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> RemoveProductImageAsync([FromRoute] Guid imageId);
-        Task<ActionResult> GetBrandAsync([FromRoute] Guid brandId);
-        Task<ActionResult> GetBrandCollectionAsync([FromQuery] FilterBrandDto input);
+        Task<ActionResult<ResponseModel<bool>>> RemoveProductImageAsync([FromRoute] Guid productId, [FromRoute] Guid imageId);
+        Task<ActionResult<ResponseModel<ICollection<BrandDto>>>> GetBrandCollectionAsync([FromQuery] FilterBrandDto? input = null);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> AddBrandAsync([FromBody] AddBrandDto input);
+        Task<ActionResult<ResponseModel<bool>>> AddBrandAsync([FromBody] AddBrandDto input);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> UpdateBrandAsync([FromBody] UpdateBrandDto input);
+        Task<ActionResult<ResponseModel<bool>>> UpdateBrandAsync([FromRoute] Guid brandId, [FromBody] UpdateBrandDto input);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> UpdateBrandLogoAsync([FromForm] UpdateBrandLogoDto input);
+        Task<ActionResult<ResponseModel<bool>>> UpdateBrandLogoAsync([FromRoute] Guid brandId, [FromForm] UpdateBrandLogoDto input);
         // [Authorize(Roles = "Shop")]
-        Task<ActionResult> RemoveBrandAsync([FromRoute] Guid brandId);
+        Task<ActionResult<ResponseModel<bool>>> RemoveBrandAsync([FromRoute] Guid brandId);
+        // Task<ActionResult<ResponseModel<ICollection<SizeDto>>>> GetSizeCollectionAsync([FromRoute] Guid productId);
+        // Task<ActionResult<ResponseModel<ICollection<ColorDto>>>> GetColorCollectionAsync([FromRoute] Guid productId);
     }
-
+ 
     [ApiController]
-    [Route("api/[controller]")]
-    public class ProductController : ControllerBase, IProductController
+    [Route("api")]
+    public class ProductController : BaseController, IProductController
     {
         private readonly IProductService _productService;
         private readonly IFeedbackService _feedbackService;
-
+ 
         public ProductController(IFeedbackService feedbackService,
                                  IProductService productService)
         {
             _feedbackService = feedbackService;
             _productService = productService;
         }
-
-        public Task<ActionResult> AddBrandAsync([FromBody] AddBrandDto input)
+ 
+        [HttpPost(template: "brand")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> AddBrandAsync([FromBody] AddBrandDto input)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.AddBrandAsync(input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "BRAND.CREATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> AddProductAsync([FromBody] AddProductDto input)
+ 
+        [HttpPost(template: "brand/{brandId}/product")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> AddProductAsync([FromRoute] Guid brandId, [FromBody] AddProductDto input)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.AddProductAsync(brandId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT.CREATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> AddProductColorsAsync([FromBody] AddProductColorsDto input)
+ 
+        [HttpPost(template: "product/{productId}/color")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> AddProductColorsAsync([FromRoute] Guid productId, [FromBody] AddProductColorsDto input)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.AddProductColorsAsync(productId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT_COLOR.CREATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> AddProductImagesAsync([FromForm] AddProductImagesDto input)
+ 
+        [HttpPost(template: "product/{productId}/image")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> AddProductImagesAsync([FromRoute] Guid productId, [FromForm] AddProductImagesDto input)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.AddProductImagesAsync(productId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT_IMAGE.CREATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> AddProductQuantityAsync([FromBody] AddProductQuantityDto input)
+ 
+        [HttpPost(template: "product/{productId}/quantity")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> AddProductQuantityAsync([FromRoute] Guid productId, [FromBody] AddProductQuantityDto input)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.AddProductQuantityAsync(productId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT_QUANTITY.CREATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> AddProductSizesAsync([FromBody] AddProductSizesDto input)
+ 
+        [HttpPost(template: "product/{productId}/size")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> AddProductSizesAsync([FromRoute] Guid productId, [FromBody] AddProductSizesDto input)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.AddProductSizesAsync(productId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT_SIZE.CREATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> GetBrandAsync([FromRoute] Guid brandId)
+ 
+        [HttpGet(template: "brand")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<ICollection<BrandDto>>>> GetBrandCollectionAsync([FromQuery] FilterBrandDto? input = null)
         {
-            throw new NotImplementedException();
+            ResponseModel<ICollection<BrandDto>> response = new();
+ 
+            ICollection<BrandDto>? brands = await _productService.GetBrandCollectionAsync(input);
+ 
+            response.Success = brands != null;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "BRAND_COLLECTION.FIND.ERROR";
+                return BadRequest(response);
+            }
+ 
+            response.Data = brands;
+            return Ok(response);
         }
-
-        public Task<ActionResult> GetBrandCollectionAsync([FromQuery] FilterBrandDto input)
+ 
+        // [HttpGet(template: "product/{productId}/color")]
+        // [Authorize(Roles = "Shop")]
+        // public async Task<ActionResult<ResponseModel<ICollection<ColorDto>>>> GetColorCollectionAsync([FromRoute] Guid productId)
+        // {
+        //     var response = new ResponseModel<ICollection<ColorDto>>();
+ 
+        //     var colors = await _productService.GetColorCollectionAsync(productId);
+ 
+        //     response.Success = colors != null;
+ 
+        //     if (!response.Success)
+        //     {
+        //         response.ErrorCode = "COLOR_COLLECTION.FIND.ERROR";
+        //         return BadRequest(response);
+        //     }
+ 
+        //     response.Data = colors;
+        //     return Ok(response);
+        // }
+ 
+        [HttpGet(template: "product/{productId}")]
+        public async Task<ActionResult<ResponseModel<ProductDto>>> GetProductAsync([FromRoute] Guid productId)
         {
-            throw new NotImplementedException();
+            ResponseModel<ProductDto> response = new();
+ 
+            ProductDto? product = await _productService.GetProductAsync(productId);
+ 
+            response.Success = product != null;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT.FIND.ERROR";
+                return BadRequest(response);
+            }
+ 
+            response.Data = product;
+            return Ok(response);
         }
-
-        public Task<ActionResult> GetProductAsync([FromRoute] Guid productId)
+ 
+        [HttpGet(template: "product")]
+        public async Task<ActionResult<ResponseModel<ICollection<ProductDto>>>> GetProductCollectionAsync([FromQuery] FilterProductDto? input = null)
         {
-            throw new NotImplementedException();
+            ResponseModel<ICollection<ProductDto>> response = new();
+ 
+            ICollection<ProductDto>? products = await _productService.GetProductCollectionAsync(input);
+ 
+            response.Success = products != null;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT_COLLECTION.FIND.ERROR";
+                return BadRequest(response);
+            }
+ 
+            response.Data = products;
+            return Ok(response);
         }
-
-        public Task<ActionResult> GetProductCollectionAsync([FromQuery] FilterProductDto input)
+ 
+        // [HttpGet(template: "product/{productId}/size")]
+        // [Authorize(Roles = "Shop")]
+        // public async Task<ActionResult<ResponseModel<ICollection<SizeDto>>>> GetSizeCollectionAsync([FromRoute] Guid productId)
+        // {
+        //     var response = new ResponseModel<ICollection<SizeDto>>();
+ 
+        //     var sizes = await _productService.GetSizeCollectionAsync(productId);
+ 
+        //     response.Success = sizes != null;
+ 
+        //     if (!response.Success)
+        //     {
+        //         response.ErrorCode = "SIZE_COLLECTION.FIND.ERROR";
+        //         return BadRequest(response);
+        //     }
+ 
+        //     response.Data = sizes;
+        //     return Ok(response);
+        // }
+ 
+        [HttpDelete(template: "brand/{brandId}")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> RemoveBrandAsync([FromRoute] Guid brandId)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.RemoveBrandAsync(brandId);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "BRAND.DELETE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> RemoveBrandAsync([FromRoute] Guid brandId)
+ 
+        [HttpDelete(template: "product/{productId}")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> RemoveProductAsync([FromRoute] Guid productId)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.RemoveProductAsync(productId);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT.DELETE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> RemoveProductAsync([FromRoute] Guid productId)
+ 
+        [HttpDelete(template: "product/{productId}/color/{colorId}")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> RemoveProductColorAsync([FromRoute] Guid productId, [FromRoute] Guid colorId)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.RemoveProductColorAsync(productId, colorId);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT_COLOR.DELETE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> RemoveProductColorsAsync([FromRoute] Guid colorId)
+ 
+        [HttpDelete(template: "product/{productId}/image/{imageId}")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> RemoveProductImageAsync([FromRoute] Guid productId, [FromRoute] Guid imageId)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.RemoveProductImageAsync(productId, imageId);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT_IMAGE.DELETE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> RemoveProductImageAsync([FromRoute] Guid imageId)
+ 
+        [HttpDelete(template: "product/{productId}/size/{sizeId}")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> RemoveProductSizeAsync([FromRoute] Guid productId, [FromRoute] Guid sizeId)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.RemoveProductSizeAsync(productId, sizeId);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT_SIZE.DELETE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> RemoveProductSizeAsync([FromRoute] Guid sizeId)
+ 
+        [HttpPut(template: "brand/{brandId}")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> UpdateBrandAsync([FromRoute] Guid brandId, [FromBody] UpdateBrandDto input)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.UpdateBrandAsync(brandId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "BRAND.UPDATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> UpdateBrandAsync([FromBody] UpdateBrandDto input)
+ 
+        [HttpPut(template: "brand/{brandId}/logo")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> UpdateBrandLogoAsync([FromRoute] Guid brandId, [FromForm] UpdateBrandLogoDto input)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.UpdateBrandLogoAsync(brandId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "BRAND_LOGO.UPDATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> UpdateBrandLogoAsync([FromForm] UpdateBrandLogoDto input)
+ 
+        [HttpPut(template: "product/{productId}")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> UpdateProductAsync([FromRoute] Guid productId, [FromBody] UpdateProductDto input)
         {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.UpdateProductAsync(productId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT.UPDATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
-
-        public Task<ActionResult> UpdateProductAsync([FromBody] UpdateProductDto input)
+ 
+        [HttpPut(template: "product/{productId}/quantity")]
+        [Authorize(Roles = "Shop")]
+        public async Task<ActionResult<ResponseModel<bool>>> UpdateProductQuantityAsync([FromRoute] Guid productId, [FromBody] UpdateProductQuantityDto input)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<ActionResult> UpdateProductQuantityAsync([FromBody] UpdateProductQuantityDto input)
-        {
-            throw new NotImplementedException();
+            ResponseModel<bool> response = new();
+ 
+            bool success = await _productService.UpdateProductQuantityAsync(productId, input);
+ 
+            response.Success = success;
+ 
+            if (!response.Success)
+            {
+                response.ErrorCode = "PRODUCT_QUANTITY.UPDATE.ERROR";
+                return BadRequest(response);
+            }
+ 
+            return Ok(response);
         }
     }
 }
