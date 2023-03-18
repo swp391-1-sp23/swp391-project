@@ -9,43 +9,60 @@ namespace SWP391.Project.Services
 {
     public interface IAccountService
     {
-        Task<ICollection<AccountDto>> GetAccountCollectionAsync(FilterAccountDto filter);
+        Task<ICollection<AccountDto>> GetAccountCollectionAsync(FilterAccountDto? filter = null);
         Task<bool> RemoveCustomerAccountAsync(Guid accountId);
         Task<bool> RemoveShopAccountAsync(Guid accountId);
-        Task<bool> UpdateAccountAsync(UpdateAccountDto input);
-        Task<bool> UpdateAccountAvatarAsync(UpdateAccountAvatarDto input);
-        Task<AccountDto> GetAccountAsync(Guid accountId);
+        Task<bool> UpdateAccountAsync(Guid accountId, UpdateAccountDto input);
+        Task<bool> UpdateAccountAvatarAsync(Guid accountId, UpdateAccountAvatarDto input);
+        Task<AccountDto?> GetAccountAsync(Guid accountId);
     }
 
     public class AccountService : BaseService, IAccountService
     {
         private readonly IAccountRepository _accountRepository;
-        private readonly IImageRepository _imageRepository;
-        private readonly IMinioRepository _minioRepository;
 
         public AccountService(IAccountRepository accountRepository,
-                              IImageRepository imageRepository,
+                              IFileRepository fileRepository,
                               IMinioRepository minioRepository,
-                              IMapper mapper) : base(mapper)
+                              IMapper mapper) : base(fileRepository,
+                                                     minioRepository,
+                                                     mapper)
         {
             _accountRepository = accountRepository;
-            _imageRepository = imageRepository;
-            _minioRepository = minioRepository;
         }
 
-        public async Task<AccountDto> GetAccountAsync(Guid accountId)
+        public async Task<AccountDto?> GetAccountAsync(Guid accountId)
         {
-            var account = await _accountRepository.GetByIdAsync(accountId);
-            var accountDto = Mapper.Map<AccountDto>(account);
+            AccountEntity? account = await _accountRepository.GetByIdAsync(accountId);
+
+            if (account == null)
+            {
+                return null;
+            }
+
+            AccountDto accountDto = Mapper.Map<AccountDto>(account);
+
+            (FileSimplified FileInfo, string? FileUrl)? avatarFile = await GetFileAsync(bucket: AvailableBucket.Avatar, fileId: account.Avatar!.Id, fileExtension: account.Avatar!.FileExtension);
+
+            if (avatarFile != null)
+            {
+                accountDto.Avatar = new()
+                {
+                    AvatarInfo = avatarFile?.FileInfo!,
+                    AvatarUrl = avatarFile?.FileUrl
+                };
+            }
+
             return accountDto;
         }
 
-        public async Task<ICollection<AccountDto>> GetAccountCollectionAsync(FilterAccountDto filter)
+        public async Task<ICollection<AccountDto>> GetAccountCollectionAsync(FilterAccountDto? filter = null)
         {
-            var searchKey = filter.SearchKey;
-            var accountCollection = await _accountRepository
+            string searchKey = filter?.SearchKey ?? string.Empty;
+
+            ICollection<AccountEntity> accountCollection = await _accountRepository
                 .GetCollectionAsync(predicate: account =>
-                    account.Id == Guid.Parse(input: searchKey)
+                    account.Id.ToString() == searchKey
                     || account.Email == searchKey
                     || string.Join(
                             separator: ' ',
@@ -54,8 +71,25 @@ namespace SWP391.Project.Services
                         .Contains(value: searchKey.Normalize())
                     );
 
-            var accountDtos = Mapper.Map<ICollection<AccountDto>>(accountCollection);
-            return accountDtos;
+            ICollection<AccountDto> accountCollectionDto = Mapper.Map<ICollection<AccountDto>>(accountCollection).Select(selector: (item, idx) =>
+            {
+                AccountEntity account = accountCollection.ElementAt(idx);
+
+                (FileSimplified FileInfo, string? FileUrl)? avatarFile = GetFileAsync(bucket: AvailableBucket.Avatar, fileId: account.Avatar!.Id, fileExtension: account.Avatar!.FileExtension).Result;
+
+                if (avatarFile != null)
+                {
+                    item.Avatar = new()
+                    {
+                        AvatarInfo = avatarFile?.FileInfo!,
+                        AvatarUrl = avatarFile?.FileUrl
+                    };
+                }
+
+                return item;
+            }).ToList();
+
+            return accountCollectionDto;
         }
 
         public async Task<bool> RemoveCustomerAccountAsync(Guid accountId)
@@ -68,24 +102,21 @@ namespace SWP391.Project.Services
             return await RemoveAccountAsync(accountId);
         }
 
-        public async Task<bool> UpdateAccountAsync(UpdateAccountDto input)
+        public async Task<bool> UpdateAccountAsync(Guid accountId, UpdateAccountDto input)
         {
-            AccountEntity? account = await _accountRepository.GetByIdAsync(entityId: input.AccountId);
+            AccountEntity? account = await _accountRepository.GetByIdAsync(entityId: accountId);
 
             if (account == null)
             {
                 return false;
             }
 
-            account.FirstName = input.FirstName;
-            account.LastName = input.LastName;
-            account.Email = input.Email;
-            account.Phone = input.Phone;
+            account = Mapper.Map(source: input, destination: account);
 
             return await _accountRepository.UpdateAsync(entity: account);
         }
 
-        public Task<bool> UpdateAccountAvatarAsync(UpdateAccountAvatarDto input)
+        public Task<bool> UpdateAccountAvatarAsync(Guid accountId, UpdateAccountAvatarDto input)
         {
             throw new NotImplementedException();
         }
