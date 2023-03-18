@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Extensions;
 
 using SWP391.Project.Entities;
 using SWP391.Project.Models;
@@ -10,7 +11,7 @@ using SWP391.Project.Services;
 namespace SWP391.Project.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api")]
     public class AuthController : BaseController
     {
         private readonly IAuthService _authService;
@@ -28,9 +29,9 @@ namespace SWP391.Project.Controllers
         [HttpPost(template: "login")]
         public async Task<ActionResult<ResponseModel<string>>> LoginAsync([FromBody] LoginInput input)
         {
-            var response = new ResponseModel<string>();
+            ResponseModel<string> response = new();
 
-            var result = await _authService.LoginAsync(input);
+            string? result = await _authService.LoginAsync(input);
 
             if (result == null)
             {
@@ -53,26 +54,27 @@ namespace SWP391.Project.Controllers
         [HttpPost(template: "register/{role}")]
         public async Task<ActionResult<ResponseModel<bool>>> RegisterAsync([FromBody] RegisterInput input, AccountRole role = AccountRole.Customer)
         {
-            var response = new ResponseModel<bool>();
+            ResponseModel<bool> response = new();
 
-            var success = await _authService.RegisterAsync(input, role);
+            bool success = await _authService.RegisterAsync(input, role);
+
+            response.Success = success;
 
             if (!success)
             {
-                response.ErrorCode = "ACCOUNT.CREATION.ERROR";
+                response.ErrorCode = "ACCOUNT.CREATE.ERROR";
                 return BadRequest(response);
             }
 
-            response.Success = success;
 
             return Ok(response);
         }
 
         [HttpGet(template: "checkToken")]
         [Authorize]
-        public ActionResult<bool> Check()
+        public ActionResult<string> Check()
         {
-            return Ok(true);
+            return AccountRole.GetDisplayName();
         }
     }
 }
