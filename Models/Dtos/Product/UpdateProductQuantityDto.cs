@@ -1,12 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 namespace SWP391.Project.Models.Dtos.Product
 {
     public class UpdateProductQuantityDto
     {
-        
+        public Guid ProductInStockId { get; set; }
+        public Guid SizeId { get; set; }
+        public Guid ColorId { get; set; }
+        public int Quantity { get; set; }
     }
 }
