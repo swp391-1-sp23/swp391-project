@@ -51,11 +51,9 @@ namespace SWP391.Project.Repositories
         public async Task<ICollection<TEntity>> GetCollectionAsync(Func<TEntity, bool>? predicate = null)
         {
             return predicate == null
-                ? await DbSet.AsNoTracking()
-                             .Where(predicate: item => item.IsDeleted == false)
+                ? await DbSet.Where(predicate: item => item.IsDeleted == false)
                              .ToListAsync()
-                : DbSet.AsNoTracking()
-                       .Where(predicate: item => item.IsDeleted == false)
+                : DbSet.Where(predicate: item => item.IsDeleted == false)
                        .Where(predicate)
                        .ToList();
         }

@@ -17,5 +17,7 @@ namespace SWP391.Project.Models.Dtos.Order
         public ColorSimplified Color { get; set; } = null!;
         [Ignore]
         public SizeSimplified Size { get; set; } = null!;
+        [Ignore]
+        public AddressSimplified Address { get; set; } = null!;
     }
 }

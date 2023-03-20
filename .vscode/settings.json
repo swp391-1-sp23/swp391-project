@@ -4,5 +4,6 @@
       "source.fixAll": true,
       "source.organizeImports": true
     }
-  }
+  },
+  "i18n-ally.localesPaths": ["www/public/locales"]
 }

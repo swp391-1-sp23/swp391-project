@@ -42,9 +42,6 @@ namespace SWP391.Project.Services
         private readonly IColorRepository _colorRepository;
         private readonly IFileRepository _fileRepository;
         private readonly IBrandRepository _brandRepository;
-        private readonly IFeedbackRepository _feedbackRepository;
-        private readonly IOrderRepository _orderRepository;
-        private readonly IAccountRepository _accountRepository;
 
         public ProductService(IMinioRepository minioRepository,
                               IFileRepository fileRepository,
@@ -64,9 +61,6 @@ namespace SWP391.Project.Services
             _brandRepository = brandRepository;
             _inStockRepository = inStockRepository;
             _productRepository = productRepository;
-            _feedbackRepository = feedbackRepository;
-            _orderRepository = orderRepository;
-            _accountRepository = accountRepository;
         }
 
         public async Task<bool> AddBrandAsync(AddBrandDto input)
@@ -110,9 +104,43 @@ namespace SWP391.Project.Services
             return await _colorRepository.AddCollectionAsync(collection: newColorCollection);
         }
 
-        public Task<bool> AddProductImagesAsync(Guid productId, AddProductImagesDto input)
+        public async Task<bool> AddProductImagesAsync(Guid productId, AddProductImagesDto input)
         {
-            throw new NotImplementedException();
+            ProductEntity? product = await _productRepository.GetByIdAsync(productId);
+
+            if (product == null)
+            {
+                return false;
+            }
+
+            List<FileEntity> fileCollection = new();
+            List<(Guid objectId, string fileExtension)> objectIdCollection = new();
+
+            foreach (IFormFile file in input.Images)
+            {
+                Guid guid = Guid.NewGuid();
+                string[] fullFileName = file.FileName.Split(".");
+
+                FileEntity newFile = new()
+                {
+                    BucketName = AvailableBucket.Product,
+                    FileExtension = fullFileName[^1],
+                    FileName = string.Join('.', fullFileName[..^1]),
+                    Id = guid,
+                };
+
+                fileCollection.Add(newFile);
+                objectIdCollection.Add(new()
+                {
+                    fileExtension = newFile.FileExtension,
+                    objectId = guid
+                });
+
+                product.Images ??= new List<FileEntity>();
+                product.Images.Add(newFile);
+            }
+
+            return await MinioRepository!.AddObjectCollectionAsync(AvailableBucket.Product, objectIdCollection, fileCollection: input.Images) && await FileRepository!.AddCollectionAsync(fileCollection);
         }
 
         public async Task<bool> AddProductQuantityAsync(Guid productId, AddProductQuantityDto input)
@@ -273,9 +301,31 @@ namespace SWP391.Project.Services
             return await _brandRepository.UpdateAsync(entity: brand);
         }
 
-        public Task<bool> UpdateBrandLogoAsync(Guid brandId, UpdateBrandLogoDto input)
+        public async Task<bool> UpdateBrandLogoAsync(Guid brandId, UpdateBrandLogoDto input)
         {
-            throw new NotImplementedException();
+            BrandEntity? brand = await _brandRepository.GetByIdAsync(entityId: brandId);
+
+            if (brand == null)
+            {
+                return false;
+            }
+
+            FileEntity? fileInDb = await FileRepository!.GetByIdAsync(entityId: brand.Logo!.Id);
+
+            if (fileInDb == null)
+            {
+                return false;
+            }
+
+            string[] fullFileName = input.Logo.FileName.Split(".");
+            fileInDb.FileName = string.Join('.', fullFileName[..^1]);
+            fileInDb.FileExtension = fullFileName[^1];
+            bool fileInDbUpdated = await FileRepository!.UpdateAsync(entity: fileInDb);
+
+            return fileInDbUpdated
+                && await MinioRepository!.AddObjectAsync(AvailableBucket.Brand,
+                    input.Logo,
+                    (objectId: fileInDb.Id, fileExtension: fileInDb.FileExtension));
         }
 
         public async Task<bool> UpdateProductAsync(Guid productId, UpdateProductDto input)
@@ -318,7 +368,7 @@ namespace SWP391.Project.Services
             productDto.Images = product.Images?.Select(selector: (item, idx) =>
             {
                 (FileSimplified FileInfo, string? FileUrl)? imageFile = GetFileAsync(bucket: AvailableBucket.Product, fileId: item.Id, fileExtension: item.FileExtension).Result;
-
+                Console.WriteLine(string.Join(',', "FILEEEEE", imageFile?.FileUrl));
                 return (imageFile?.FileInfo!, imageFile?.FileUrl!);
             }).ToList();
 

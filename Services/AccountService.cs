@@ -116,9 +116,31 @@ namespace SWP391.Project.Services
             return await _accountRepository.UpdateAsync(entity: account);
         }
 
-        public Task<bool> UpdateAccountAvatarAsync(Guid accountId, UpdateAccountAvatarDto input)
+        public async Task<bool> UpdateAccountAvatarAsync(Guid accountId, UpdateAccountAvatarDto input)
         {
-            throw new NotImplementedException();
+            AccountEntity? account = await _accountRepository.GetByIdAsync(entityId: accountId);
+
+            if (account == null)
+            {
+                return false;
+            }
+
+            FileEntity? fileInDb = await FileRepository?.GetByIdAsync(account.Avatar!.Id)!;
+
+            if (fileInDb == null)
+            {
+                return false;
+            }
+
+            string[] fullFileName = input.Avatar.FileName.Split(".");
+            fileInDb.FileName = string.Join('.', fullFileName[..^1]);
+            fileInDb.FileExtension = fullFileName[^1];
+            bool fileInDbUpdated = await FileRepository!.UpdateAsync(entity: fileInDb);
+
+            return fileInDbUpdated
+                && await MinioRepository!.AddObjectAsync(AvailableBucket.Avatar,
+                    input.Avatar,
+                    (objectId: fileInDb.Id, fileExtension: fileInDb.FileExtension));
         }
 
         private async Task<bool> RemoveAccountAsync(Guid accountId)
