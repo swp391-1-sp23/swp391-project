@@ -2,6 +2,7 @@ import {
   DeleteOutlined,
   EditOutlined,
   MinusOutlined,
+  PictureOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,10 +20,13 @@ import {
   Tag,
   Tooltip,
   Typography,
+  Upload,
 } from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import ENV from "src/constants/env";
 import queryKeys from "src/hooks/apis/keys/queryKeys";
+import useTokenStore from "src/hooks/states/useTokenStore";
 import apiRequest from "src/utilities/apiRequest";
 import { components } from "src/utilities/apiSchemas";
 
@@ -32,6 +36,7 @@ const ProductManagementPage = () => {
     ...queryKeys.productQueryKeys.get({}),
     select: ({ data: { data } }) => data,
   });
+  const { token } = useTokenStore();
 
   const queryClient = useQueryClient();
 
@@ -48,6 +53,46 @@ const ProductManagementPage = () => {
   const [sizeForm] = Form.useForm();
   const [quantityForm] = Form.useForm();
   const [imageForm] = Form.useForm();
+
+  const imagePostMutation = useMutation({
+    mutationFn: async (params: FormData) => {
+      console.log(params.get("Images"));
+      return await fetch(
+        [ENV.API_BASE_URL, "api", "product", selectedProductId, "image"].join(
+          "/"
+        ),
+        {
+          credentials: "include",
+          body: params,
+          method: "post",
+          headers: {
+            Authorization: ["Bearer", token].join(" "),
+          },
+        }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.productQueryKeys.get._def,
+      });
+    },
+  });
+
+  const imageDeleteMutation = useMutation({
+    mutationFn: async (params: { productId: string; imageId: string }) => {
+      const deleteImage = apiRequest
+        .path("/api/product/{productId}/image/{imageId}")
+        .method("delete")
+        .create();
+
+      return await deleteImage(params);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.productQueryKeys.get._def,
+      });
+    },
+  });
 
   const productDeleteMutation = useMutation({
     mutationFn: async (productId: string) => {
@@ -322,7 +367,13 @@ const ProductManagementPage = () => {
             title: t("MANAGEMENT.PRODUCT.TABLE.ACTIONS"),
             render: (value, record, idx) => (
               <Space>
-                <Button icon={<EditOutlined />} />
+                <Button
+                  icon={<PictureOutlined />}
+                  onClick={() => {
+                    setImageModal(true);
+                    setSelectedProductId(record.id!);
+                  }}
+                />
                 <Tooltip
                   title={t("MANAGEMENT.PRODUCT.TABLE.ACTIONS.ADD_QUANTITY")}
                 >
@@ -758,6 +809,57 @@ const ProductManagementPage = () => {
               />
             );
           })()}
+        </Space>
+      </Modal>
+      <Modal
+        open={imageModal}
+        onOk={() => setImageModal(false)}
+        onCancel={() => setImageModal(false)}
+        confirmLoading={
+          imageDeleteMutation.isLoading || imagePostMutation.isLoading
+        }
+        footer={null}
+      >
+        <Space direction={"vertical"} style={{ width: "100%" }}>
+          <Form
+            form={imageForm}
+            onFinish={(values) => {
+              const formData = new FormData();
+              console.log(values)
+              // formData.set(
+              //   "Images",
+              //   values["images"]?.map((item: any) => item.originFileObj)
+              // );
+              values["images"]?.forEach((file: any) => {
+                formData.append("Images", file.originFileObj);
+              });
+
+              imagePostMutation.mutate(formData);
+            }}
+            disabled={imagePostMutation.isLoading}
+          >
+            <Form.Item
+              name={"images"}
+              valuePropName={"fileList"}
+              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+            >
+              <Upload.Dragger multiple={true} maxCount={2} name={"images"}>
+                <Typography.Title level={3}>
+                  {t("FORM.PRODUCT.IMAGES.DRAG")}
+                </Typography.Title>
+              </Upload.Dragger>
+            </Form.Item>
+            <Form.Item>
+              <Space>
+                <Button onClick={() => imageForm.resetFields()}>
+                  {t("FORM.PRODUCT.IMAGES.RESET")}
+                </Button>
+                <Button type={"primary"} htmlType={"submit"}>
+                  {t("FORM.PRODUCT.IMAGES.SUBMIT")}
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
         </Space>
       </Modal>
     </Space>
