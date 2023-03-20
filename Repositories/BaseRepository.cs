@@ -96,10 +96,8 @@ namespace SWP391.Project.Repositories
         {
             return ignoreDeleted switch
             {
-                true => await DbSet.AsNoTracking()
-                                   .SingleOrDefaultAsync(predicate),
-                false => await DbSet.AsNoTracking()
-                                    .Where(predicate: item => item.IsDeleted == false)
+                true => await DbSet.SingleOrDefaultAsync(predicate),
+                false => await DbSet.Where(predicate: item => item.IsDeleted == false)
                                     .SingleOrDefaultAsync(predicate),
             };
         }

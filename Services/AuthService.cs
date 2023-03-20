@@ -40,7 +40,7 @@ namespace SWP391.Project.Services
  
         public async Task<string?> LoginAsync(LoginInput input)
         {
-            AccountEntity? account = await _accountRepository.GetByEmailAsync(email: input.Email);
+            AccountEntity? account = await _accountRepository.GetSingleAsync(predicate: item => !item.IsDeleted && item.Email == input.Email);
  
             if (account == null)
             {

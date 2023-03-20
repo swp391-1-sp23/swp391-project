@@ -4,6 +4,7 @@
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
 ContainerizedData
+www
 
 # User-specific files
 *.rsuser
