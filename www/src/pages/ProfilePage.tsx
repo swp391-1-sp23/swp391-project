@@ -1,8 +1,33 @@
-import { EditOutlined, PictureOutlined } from "@ant-design/icons";
-import { Button, Card, Col, Form, Image, Input, Modal, Row, Space } from "antd";
+import {
+  CheckOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PictureOutlined,
+} from "@ant-design/icons";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Button,
+  Card,
+  Checkbox,
+  Col,
+  Form,
+  Image,
+  Input,
+  List,
+  Modal,
+  Row,
+  Space,
+  Tag,
+  Typography,
+  Upload,
+} from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import ENV from "src/constants/env";
+import queryKeys from "src/hooks/apis/keys/queryKeys";
 import useProfileStore from "src/hooks/states/useProfileStore";
+import useTokenStore from "src/hooks/states/useTokenStore";
+import apiRequest from "src/utilities/apiRequest";
 import { components } from "src/utilities/apiSchemas";
 
 const ProfilePage = () => {
@@ -13,7 +38,69 @@ const ProfilePage = () => {
       setIsModalOpen(false);
     },
   });
+  const [addressModal, setAddressModal] = useState(false);
+  const queryClient = useQueryClient();
+  const addressQuery = useQuery({
+    ...queryKeys.addressQueryKeys.get,
+    select: ({ data: { data } }) => data,
+    enabled: profile?.role === "Customer",
+  });
+  const [addressForm] = Form.useForm();
+
+  const addressPostMutation = useMutation({
+    mutationFn: async (params: components["schemas"]["AddAddressDto"]) => {
+      const postAddress = apiRequest
+        .path("/api/address")
+        .method("post")
+        .create();
+
+      return await postAddress(params);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.addressQueryKeys.get._def,
+      });
+    },
+  });
+  const addressDeleteMutation = useMutation({
+    mutationFn: async ({ addressId }: { addressId: string }) => {
+      const deleteAddress = apiRequest
+        .path("/api/address/{addressId}")
+        .method("delete")
+        .create();
+
+      return await deleteAddress({ addressId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.addressQueryKeys.get._def,
+      });
+    },
+  });
+
   const { t } = useTranslation();
+
+  const [avatarModal, setAvatarModal] = useState(false);
+  const [avatarForm] = Form.useForm();
+  const { token } = useTokenStore();
+  const avatarMutation = useMutation({
+    mutationFn: async (params: FormData) => {
+      return await fetch([ENV.API_BASE_URL, "api", "avatar"].join("/"), {
+        credentials: "include",
+        body: params,
+        method: "post",
+        headers: {
+          Authorization: ["Bearer", token].join(" "),
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.profileQueryKeys.get._def,
+      });
+      setAvatarModal(false);
+    },
+  });
   return (
     <>
       <Row align={"middle"} justify={"center"} style={{ height: "100%" }}>
@@ -30,7 +117,11 @@ const ProfilePage = () => {
                       }
                     />
                     <Row justify={"start"}>
-                      <Button type={"primary"} icon={<PictureOutlined />}>
+                      <Button
+                        type={"primary"}
+                        icon={<PictureOutlined />}
+                        onClick={() => setAvatarModal(true)}
+                      >
                         {t("PROFILE.EDIT_AVATAR")}
                       </Button>
                     </Row>
@@ -41,13 +132,24 @@ const ProfilePage = () => {
                 <Row justify={"center"}>
                   <Space direction={"vertical"} style={{ width: "100%" }}>
                     <Row justify={"end"}>
-                      <Button
-                        type={"primary"}
-                        icon={<EditOutlined />}
-                        onClick={() => setIsModalOpen(true)}
-                      >
-                        {t("PROFILE.EDIT")}
-                      </Button>
+                      <Space>
+                        {profile?.role === "Customer" && (
+                          <Button
+                            // type={"primary"}
+                            icon={<EditOutlined />}
+                            onClick={() => setAddressModal(true)}
+                          >
+                            {t("PROFILE.ADDRESS")}
+                          </Button>
+                        )}
+                        <Button
+                          type={"primary"}
+                          icon={<EditOutlined />}
+                          onClick={() => setIsModalOpen(true)}
+                        >
+                          {t("PROFILE.EDIT")}
+                        </Button>
+                      </Space>
                     </Row>
                     <Input
                       addonBefore={t("PROFILE.ID")}
@@ -179,7 +281,177 @@ const ProfilePage = () => {
           </Form.Item>
         </Form>
       </Modal>
-      {ctx}
+      <Modal
+        open={addressModal}
+        onCancel={() => setAddressModal(false)}
+        title={t("PROFILE.ADDRESS")}
+        onOk={() => setAddressModal(false)}
+        confirmLoading={
+          addressDeleteMutation.isLoading || addressPostMutation.isLoading
+        }
+        footer={null}
+      >
+        <Form
+          form={addressForm}
+          onFinish={(values: components["schemas"]["AddAddressDto"]) => {
+            addressPostMutation.mutate(values);
+          }}
+          layout={"vertical"}
+          disabled={addressPostMutation.isLoading}
+        >
+          <Space>
+            <Form.Item
+              label={t("FORM.ADDRESS.ADDRESS_NAME")}
+              name={"addressName"}
+              rules={[
+                {
+                  required: true,
+                },
+              ]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name={"isPrimary"}
+              rules={[
+                {
+                  type: "boolean",
+                },
+              ]}
+              initialValue={true}
+              valuePropName={"checked"}
+              label={t("FORM.ADDRESS.IS_PRIMARY")}
+            >
+              <Checkbox />
+            </Form.Item>
+          </Space>
+          <Form.Item
+            label={t("FORM.ADDRESS.CITY")}
+            name={"city"}
+            rules={[
+              {
+                required: true,
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label={t("FORM.ADDRESS.DISTRICT")}
+            name={"district"}
+            rules={[
+              {
+                required: true,
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label={t("FORM.ADDRESS.WARD")}
+            name={"ward"}
+            rules={[
+              {
+                required: true,
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label={t("FORM.ADDRESS.STREET")}
+            name={"street"}
+            rules={[
+              {
+                required: true,
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button onClick={() => addressForm.resetFields()}>
+                {t("FORM.ADDRESS.RESET")}
+              </Button>
+              <Button type={"primary"} htmlType={"submit"}>
+                {t("FORM.ADDRESS.SUBMIT")}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+        <List
+          dataSource={addressQuery.data ?? []}
+          renderItem={(item) => (
+            <List.Item
+              key={item.id}
+              actions={[
+                item.isPrimary && <Button icon={<CheckOutlined />} />,
+                <Button
+                  danger={true}
+                  icon={<DeleteOutlined />}
+                  onClick={() =>
+                    addressDeleteMutation.mutate({ addressId: item.id! })
+                  }
+                />,
+              ]}
+            >
+              <Space align={"baseline"}>
+                <Typography.Title level={5}>
+                  {item.addressName}
+                </Typography.Title>
+                <Typography.Text ellipsis={true}>
+                  {[item.city, item.district, item.ward, item.street].join(
+                    ", "
+                  )}
+                </Typography.Text>
+              </Space>
+            </List.Item>
+          )}
+        />
+      </Modal>
+      <Modal
+        title={t("PROFILE.AVATAR")}
+        onCancel={() => setAvatarModal(false)}
+        onOk={() => setAvatarModal(false)}
+        confirmLoading={avatarMutation.isLoading}
+        footer={null}
+        open={avatarModal}
+      >
+        <Form
+          form={avatarForm}
+          onFinish={(values) => {
+            const formData = new FormData();
+            formData.set("Avatar", values["avatar"]?.at(0).originFileObj);
+
+            avatarMutation.mutate(formData);
+          }}
+          disabled={avatarMutation.isLoading}
+        >
+          <Form.Item
+            name={"avatar"}
+            valuePropName={"fileList"}
+            getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+          >
+            <Upload.Dragger multiple={false} maxCount={1} name={"avatar"}>
+              <Typography.Title level={3}>
+                {t("FORM.AVATAR.DRAG")}
+              </Typography.Title>
+            </Upload.Dragger>
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button onClick={() => avatarForm.resetFields()}>
+                {t("FORM.AVATAR.RESET")}
+              </Button>
+              <Button type={"primary"} htmlType={"submit"}>
+                {t("FORM.ADDRESS.SUBMIT")}
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+      {/* {ctx} */}
     </>
   );
 };
