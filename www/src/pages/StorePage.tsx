@@ -1,7 +1,7 @@
 import { InfoCircleOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "ahooks";
-import { Col, Image, Input, Row, Space } from "antd";
+import { Col, Image, Row, Space } from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "src/components/ProductCard";
@@ -41,8 +41,12 @@ const StorePage = () => {
       <Row justify={"center"}>
         <Col xs={22} sm={20} md={18}>
           <Space style={{ width: "100%" }} direction={"vertical"}>
-            <Input.Search allowClear={true} />
-            <Row justify={"space-evenly"} gutter={16} style={{ width: "100%" }}>
+            {/* <Input.Search allowClear={true} /> */}
+            <Row
+              justify={"space-evenly"}
+              gutter={[16, 16]}
+              style={{ width: "100%" }}
+            >
               {query.data?.length &&
                 query.data?.map((item, idx) => (
                   <ProductCard
@@ -74,7 +78,7 @@ const StorePage = () => {
                       ],
                       cover: (
                         <Image
-                          height={150}
+                          // height={150}
                           alt={item.productName!}
                           src={
                             (item.images?.at(0) as Record<string, string>)?.[
