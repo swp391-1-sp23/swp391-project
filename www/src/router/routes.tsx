@@ -1,4 +1,5 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { Button, Result, Row, Space } from "antd";
+import { createBrowserRouter, Navigate, redirect } from "react-router-dom";
 import AccountManagementPage from "src/pages/AccountManagementPage";
 import BrandManagementPage from "src/pages/BrandManagementPage";
 import CartPage from "src/pages/CartPage";
@@ -26,7 +27,7 @@ const router = createBrowserRouter([
         element: <StorePage />,
       },
       {
-        path: "product/:id",
+        path: "product/:productId",
         element: <ProductPage />,
       },
       {
@@ -70,6 +71,22 @@ const router = createBrowserRouter([
       {
         path: "test",
         element: <TestPage />,
+      },
+      {
+        path: "*",
+        element: (
+          <Row align={"middle"} justify={"center"}>
+            <Space direction={"vertical"} align={"center"}>
+              <Result status={"404"} title={404} subTitle={"Not Found"} />
+              <Button
+                type={"primary"}
+                onClick={() => (window.location.href = "/")}
+              >
+                Back to home
+              </Button>
+            </Space>
+          </Row>
+        ),
       },
     ],
   },

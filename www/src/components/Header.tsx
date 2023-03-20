@@ -1,5 +1,6 @@
 import {
   AppstoreOutlined,
+  HistoryOutlined,
   ShoppingCartOutlined,
   TagOutlined,
   UserOutlined,
@@ -40,7 +41,7 @@ const Header = () => {
   };
 
   const cartQuery = useQuery({
-    enabled: !!token,
+    enabled: !!token && profile?.role === "Customer",
     ...queryKeys.cartQueryKeys.get,
     select: ({ data: { data } }) => data,
   });
@@ -87,6 +88,14 @@ const Header = () => {
                         onClick={() => navigate(["cart"].join("/"))}
                       />
                     </Badge>
+                  )}
+                  {profile?.role === "Customer" && (
+                    <Button
+                      type={"text"}
+                      onClick={() => navigate(["order"].join("/"))}
+                      icon={<HistoryOutlined />}
+                      shape={"round"}
+                    />
                   )}
                   <Button
                     type={"text"}

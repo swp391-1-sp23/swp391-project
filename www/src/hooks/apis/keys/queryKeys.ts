@@ -105,7 +105,7 @@ const productQueryKeys = createQueryKeys("productQueryKeys", {
       return await getProduct({});
     },
   }),
-  getById: ({ productId }) => ({
+  getById: ({ productId }: { productId: string }) => ({
     queryKey: ["product", productId],
     queryFn: async () => {
       const getProductById = apiRequest

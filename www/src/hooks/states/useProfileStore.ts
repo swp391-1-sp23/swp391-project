@@ -19,7 +19,7 @@ const useProfileStore = (props?: {
   const resetProfile = () => setProfile(RESET);
 
   const query = useQuery({
-    enabled: !profile && !!token,
+    enabled: !!token,
     ...queryKeys.profileQueryKeys.get,
     onSuccess: ({ data: { data } }) => {
       mapi.success([t("QUERY.PROFILE.SUCCESS")].join(" "));

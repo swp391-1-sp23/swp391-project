@@ -814,7 +814,7 @@ export interface components {
     AddOrderDto: {
       /** Format: uuid */
       shippingAddressId?: string;
-      productInStocks?: (string)[] | null;
+      cartIds?: (string)[] | null;
     };
     AddProductColorsDto: {
       colorNames?: (string)[] | null;
@@ -851,6 +851,16 @@ export interface components {
       errorCode?: string | null;
       data?: (components["schemas"]["AddressDto"])[] | null;
       success?: boolean;
+    };
+    AddressSimplified: {
+      /** Format: uuid */
+      id?: string;
+      addressName?: string | null;
+      city?: string | null;
+      district?: string | null;
+      ward?: string | null;
+      street?: string | null;
+      isPrimary?: boolean;
     };
     BooleanResponseModel: {
       errorCode?: string | null;
@@ -921,6 +931,7 @@ export interface components {
       product?: components["schemas"]["ProductSimplified"];
       color?: components["schemas"]["ColorSimplified"];
       size?: components["schemas"]["SizeSimplified"];
+      address?: components["schemas"]["AddressSimplified"];
     };
     OrderDtoICollectionResponseModel: {
       errorCode?: string | null;
